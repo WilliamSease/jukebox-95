@@ -1,6 +1,6 @@
 {
-  "name": "electron-react-boilerplate",
-  "description": "A foundation for scalable desktop apps",
+  "name": "subsonic-player-95",
+  "description": "A subsonic-compatible music client written in stylish React 95.",
   "keywords": [
     "electron",
     "boilerplate",
@@ -12,27 +12,13 @@
     "hot",
     "reload"
   ],
-  "homepage": "https://github.com/electron-react-boilerplate/electron-react-boilerplate#readme",
-  "bugs": {
-    "url": "https://github.com/electron-react-boilerplate/electron-react-boilerplate/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/electron-react-boilerplate/electron-react-boilerplate.git"
-  },
+  "homepage": "https://github.com/WilliamSease/subsonic-player-95",
   "license": "MIT",
   "author": {
-    "name": "Electron React Boilerplate Maintainers",
-    "email": "electronreactboilerplate@gmail.com",
-    "url": "https://electron-react-boilerplate.js.org"
+    "name": "William Sease",
+    "email": "williamsease@protonmail.me",
+    "url": "https://williamsoft.net"
   },
-  "contributors": [
-    {
-      "name": "Amila Welihinda",
-      "email": "amilajack@gmail.com",
-      "url": "https://github.com/amilajack"
-    }
-  ],
   "main": "./.erb/dll/main.bundle.dev.js",
   "scripts": {
     "build": "concurrently \"npm run build:main\" \"npm run build:renderer\"",
@@ -102,12 +88,17 @@
   },
   "dependencies": {
     "@electron/notarize": "^3.0.0",
+    "@formspree/react": "^2.5.1",
+    "@reduxjs/toolkit": "^2.12.0",
     "electron-debug": "^4.1.0",
     "electron-log": "^5.3.2",
     "electron-updater": "^6.3.9",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "react-router-dom": "^7.3.0"
+    "lodash": "^4.17.21",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-redux": "^9.3.0",
+    "react-router-dom": "^7.3.0",
+    "react95": "^4.0.0"
   },
   "devDependencies": {
     "@electron/rebuild": "^3.7.1",
@@ -117,6 +108,7 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.2.0",
     "@types/jest": "^29.5.14",
+    "@types/lodash": "^4.17.24",
     "@types/node": "22.13.10",
     "@types/react": "^19.0.11",
     "@types/react-dom": "^19.0.4",
@@ -156,7 +148,7 @@
     "mini-css-extract-plugin": "^2.9.2",
     "prettier": "^3.5.3",
     "react-refresh": "^0.16.0",
-    "react-test-renderer": "^19.0.0",
+    "react-test-renderer": "^18.0.0",
     "rimraf": "^6.0.1",
     "sass": "^1.86.0",
     "sass-loader": "^16.0.5",
@@ -175,8 +167,8 @@
     "webpack-merge": "^6.0.1"
   },
   "build": {
-    "productName": "ElectronReact",
-    "appId": "org.erb.ElectronReact",
+    "productName": "Subsonic Player 95",
+    "appId": "org.erb.subsonicplayer95",
     "asar": true,
     "afterSign": ".erb/scripts/notarize.js",
     "asarUnpack": "**\\*.{node,dll}",
@@ -235,12 +227,9 @@
     ],
     "publish": {
       "provider": "github",
-      "owner": "electron-react-boilerplate",
-      "repo": "electron-react-boilerplate"
+      "owner": "subsonic-player-95",
+      "repo": "subsonic-player-5"
     }
-  },
-  "collective": {
-    "url": "https://opencollective.com/electron-react-boilerplate-594"
   },
   "devEngines": {
     "runtime": {
