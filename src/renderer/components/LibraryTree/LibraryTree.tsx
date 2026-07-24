@@ -1,13 +1,5 @@
 import { useMemo, useState } from 'react';
-import {
-  Button,
-  Frame,
-  Hourglass,
-  ScrollView,
-  Tab,
-  Tabs,
-  TreeView,
-} from 'react95';
+import { Button, Frame, Hourglass, ScrollView, Tab, Tabs } from 'react95';
 
 import './LibraryTree.css';
 import { GlobalReducer, GlobalState } from '../../hooks/useGlobalState';
@@ -15,6 +7,7 @@ import { getAllSongs } from '../../api/helperFunctions';
 import { Folder, useLibraryTree } from './useLibraryTreeResult';
 import { isNil } from 'lodash';
 import type { Child } from 'subsonic-api' with { 'resolution-mode': 'import' };
+import { TreeView } from './__TreeView__/CustomTreeView';
 
 export const LibraryTree = (props: { global: GlobalReducer }) => {
   const [_state, dispatch] = props.global;
@@ -81,8 +74,9 @@ export const LibraryTree = (props: { global: GlobalReducer }) => {
             ) : (
               !isNil(tree) && (
                 <TreeView<Folder>
+                  defaultExpanded={[tree.id]}
                   tree={[tree]}
-                  onNodeSelect={(_id, folder) => {
+                  onNodeSelect={(id, folder) => {
                     if (selected?.path === folder.path) {
                       const node = identifyNode(folder);
                       if (!isNil(node))
@@ -96,9 +90,7 @@ export const LibraryTree = (props: { global: GlobalReducer }) => {
                     }
                   }}
 
-                  onNodeToggle={(event) => {
-                    console.info('toggle');
-                  }}
+                  onNodeToggle={(event) => {}}
                 />
               )
             )}
