@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "description": "",
   "author": {
-    "name": "",
-    "email": ""
+    "name": "William Sease",
+    "email": "William.Sease@proton.me"
   },
   "main": "./dist/main/main.js",
   "scripts": {
