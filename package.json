@@ -1,5 +1,6 @@
 {
   "name": "subsonic-player-95",
+  "version": "0.0.0",
   "description": "A subsonic-compatible music client written in stylish React 95.",
   "keywords": [
     "electron",
@@ -29,6 +30,7 @@
     "lint": "cross-env NODE_ENV=development eslint . --ext .js,.jsx,.ts,.tsx",
     "lint:fix": "cross-env NODE_ENV=development eslint . --ext .js,.jsx,.ts,.tsx --fix",
     "package": "ts-node ./.erb/scripts/clean.js dist && npm run build && electron-builder build --publish never && npm run build:dll",
+    "compile-run": "npm run package && ./release/build/SubsonicPlayer95-0.0.0.AppImage",
     "rebuild": "electron-rebuild --parallel --types prod,dev,optional --module-dir release/app",
     "prestart": "cross-env NODE_ENV=development TS_NODE_TRANSPILE_ONLY=true NODE_OPTIONS=\"-r ts-node/register --no-warnings\" webpack --config ./.erb/configs/webpack.config.main.dev.ts",
     "start": "ts-node ./.erb/scripts/check-port-in-use.js && npm run prestart && npm run start:renderer",
@@ -89,19 +91,19 @@
   "dependencies": {
     "@electron/notarize": "^3.0.0",
     "@formspree/react": "^2.5.1",
-    "@reduxjs/toolkit": "^2.12.0",
     "electron-debug": "^4.1.0",
     "electron-log": "^5.3.2",
     "electron-updater": "^6.3.9",
     "lodash": "^4.17.21",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-redux": "^9.3.0",
-    "react-router-dom": "^7.3.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.11.2",
     "react95": "^4.0.0",
-    "subsonic-api": "^3.3.1"
+    "subsonic-api": "^3.3.1",
+    "styled-components": "5.3.11"
   },
   "devDependencies": {
+    "@types/styled-components": "^5.1.26",
     "@electron/rebuild": "^3.7.1",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.15",
     "@svgr/webpack": "^8.1.0",
@@ -168,7 +170,7 @@
     "webpack-merge": "^6.0.1"
   },
   "build": {
-    "productName": "Subsonic Player 95",
+    "productName": "SubsonicPlayer95",
     "appId": "org.erb.subsonicplayer95",
     "asar": true,
     "afterSign": ".erb/scripts/notarize.js",

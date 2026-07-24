@@ -1,15 +1,14 @@
 import { useCallback, useMemo } from 'react';
 import { FlexRow } from '../sdk/FlexElements';
 import { FlexWindowModal } from '../sdk/FlexWindowModal';
+import { GlobalReducer } from '../hooks/useGlobalState';
 
 type IProps = {
-  isOpen: boolean;
-  closeThisWindow: () => void;
-  delays: number[];
+  global: GlobalReducer;
 };
 
 export const NetworkGraphDialog = (props: IProps) => {
-  const { isOpen, closeThisWindow, delays } = props;
+  const [state, dispatch] = props.global;
   const catDelay = useCallback((val: number) => {
     if (val < 300) return 'Good!';
     if (val < 1000) return 'Slow';
@@ -23,7 +22,7 @@ export const NetworkGraphDialog = (props: IProps) => {
   const placeHolder = useMemo(
     () =>
       [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19]
-        .slice(delays.length)
+        .slice([].length)
         .map((i) => {
           return (
             <FlexRow style={{ marginLeft: '.5rem' }} key={i}>
@@ -31,7 +30,7 @@ export const NetworkGraphDialog = (props: IProps) => {
             </FlexRow>
           );
         }),
-    [delays.length],
+    [[].length],
   );
 
   return (
@@ -39,12 +38,12 @@ export const NetworkGraphDialog = (props: IProps) => {
       title={'Network Graph'}
       height={700}
       width={500}
-      isOpen={isOpen}
-      onClose={closeThisWindow}
+      isOpen={state.windowOpen.network}
+      onClose={() => dispatch({ windowOpen: { network: false } })}
       provideCloseButton
     >
       {placeHolder}
-      {delays.map((delay, i) => (
+      {[].map((delay, i) => (
         <FlexRow style={{ marginLeft: '.5rem' }}>
           <div key={i} style={{ width: '15%' }}>
             {delay}ms
@@ -63,7 +62,7 @@ export const NetworkGraphDialog = (props: IProps) => {
       ))}
       <hr />
       <div style={{ marginLeft: '.5rem' }}>
-        If most of these responses are GOOD or SLOW Spotify95 should work fine.
+        If most of these responses are GOOD or SLOW Subsonic95 should work fine.
         If many calls are BAD you might see odd behavior stemming from desyncs
         between this client and Spotify. These calls are only a couple
         kilobytes, it shouldn't strain your internet.

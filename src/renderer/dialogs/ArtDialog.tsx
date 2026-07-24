@@ -1,10 +1,12 @@
-import { isNil } from 'lodash';
-import { useDispatch, useSelector } from 'react-redux';
-import { Frame } from 'react95';
+import { GlobalReducer } from '../hooks/useGlobalState';
 import { FlexWindowModal } from '../sdk/FlexWindowModal';
 
-export const ArtDialog = () => {
-  const dispatch = useDispatch();
+type IProps = {
+  global: GlobalReducer;
+};
+export const ArtDialog = (props: IProps) => {
+  const [state, dispatch] = props.global;
+
   return (
     <FlexWindowModal
       title={'Artwork'}

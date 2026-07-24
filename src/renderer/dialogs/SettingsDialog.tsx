@@ -1,39 +1,35 @@
 import { GroupBox, Select } from 'react95';
 import * as Themes from 'react95/dist/themes';
 import { Theme } from 'react95/dist/types';
-import { useDispatch, useSelector } from 'react-redux';
-import { selectTheme, setTheme } from '../state/store';
 import Label from '../sdk/Label';
 import { FlexWindowModal } from '../sdk/FlexWindowModal';
 import { useEffect, useState } from 'react';
+import { GlobalReducer } from '../hooks/useGlobalState';
 
 const ThemesArray = Object.entries(Themes.default);
 
 type IProps = {
-  isOpen: boolean;
-  closeThisWindow: () => void;
+  global: GlobalReducer;
 };
 
 export const SettingsDialog = (props: IProps) => {
-  const { isOpen, closeThisWindow } = props;
-  const dispatch = useDispatch();
-  const currentTheme = useSelector(selectTheme);
+  const [state, dispatch] = props.global;
 
   const [themeMemory, setThemeMemory] = useState<Theme>();
 
   useEffect(() => {
-    if (isOpen) {
-      setThemeMemory(currentTheme);
+    if (state.windowOpen.settings) {
+      setThemeMemory(state.config.theme);
     } else {
       setThemeMemory(undefined);
     }
-  }, [isOpen, setThemeMemory]);
+  }, [state, setThemeMemory]);
 
   return (
     <FlexWindowModal
       title="Settings"
-      isOpen={isOpen}
-      onClose={closeThisWindow}
+      isOpen={state.windowOpen.settings}
+      onClose={() => dispatch({ windowOpen: { settings: false } })}
       height={600}
       width={500}
       bottomButtons={[
@@ -41,7 +37,7 @@ export const SettingsDialog = (props: IProps) => {
         {
           text: 'cancel',
           onPress: () => {
-            dispatch(setTheme(themeMemory));
+            dispatch({ config: { theme: themeMemory } });
           },
           closesWindow: true,
         },
@@ -53,14 +49,16 @@ export const SettingsDialog = (props: IProps) => {
       >
         <Label>Theme:</Label>
         <Select
-          defaultValue={ThemesArray.map((t) => t[0]).indexOf(currentTheme.name)}
+          defaultValue={ThemesArray.map((t) => t[0]).indexOf(
+            state.config.theme.name,
+          )}
           options={ThemesArray.map((v: [string, Theme], i) => {
             return { value: i, label: v[0] };
           })}
           menuMaxHeight={160}
           width={160}
           onChange={(e) => {
-            dispatch(setTheme(ThemesArray[e.value][1]));
+            dispatch({ config: { theme: ThemesArray[e.value][1] } });
           }}
         />
       </GroupBox>

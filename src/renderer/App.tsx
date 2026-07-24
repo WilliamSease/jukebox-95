@@ -15,20 +15,12 @@ import MenuButtonWithDropDown from './sdk/MenuButtonWithDropDown';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { isNil } from 'lodash';
-import { useDispatch, useSelector } from 'react-redux';
-import {
-  selectPlayerView,
-  selectShowAlbumArt,
-  selectTheme,
-  togglePlayerView,
-  toggleShowAlbumArt,
-} from './state/store';
 import { SettingsDialog } from './dialogs/SettingsDialog';
 import { VolumeSlider } from './components/VolumeSlider';
 import { ArtDialog } from './dialogs/ArtDialog';
 import { LibraryTree } from './components/LibraryTree';
 import { PlayerList } from './components/PlayerList';
-import { AboutDialog, TodoDialog, WhyDialog } from './dialogs/AboutDialog';
+import { AboutDialog, TodoDialog } from './dialogs/AboutDialog';
 import { FlexColumn } from './sdk/FlexElements';
 import { AuthDialog } from './dialogs/AuthDialog';
 import { useClock } from './sdk/useClock';
@@ -37,6 +29,7 @@ import { NetworkGraphDialog } from './dialogs/NetworkGraphDialog';
 import { FocusModeDialog } from './dialogs/FocusModeDialog';
 import { HelpDialog } from './dialogs/HelpDialog';
 import { ContactDialog } from './dialogs/ContactDialog';
+import useGlobalState from './hooks/useGlobalState';
 
 const GlobalStyles = createGlobalStyle`
   ${styleReset}
@@ -63,31 +56,13 @@ const GlobalStyles = createGlobalStyle`
 `;
 
 export default function App() {
-  const dispatch = useDispatch();
-
-  const playerView: 'individual' | 'group' = useSelector(selectPlayerView);
-
-  const showAlbumArt = useSelector(selectShowAlbumArt);
-
-  const [leftPanelBigger, setLeftPanelBigger] = useState(false);
+  const global = useGlobalState();
+  const [state, dispatch] = global;
 
   const [tokenButtonHover, setTokenButtonHover] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [apiTesterOpen, setApiTesterOpen] = useState(false);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [debuggerIsOpen, setDebuggerIsOpen] = useState(false);
-  const [aboutDialogOpen, setAboutDialogOpen] = useState(false);
-  const [todoDialogOpen, setTodoDialogOpen] = useState(false);
-  const [whyDialogOpen, setWhyDialogOpen] = useState(false);
-  const [helpDialogOpen, setHelpDialogOpen] = useState(false);
-  const [contactDialogOpen, setContactDialogOpen] = useState(false);
-  const [deviceDialogOpen, setDeviceDialogOpen] = useState(false);
-  const [authDialogOpen, setAuthDialogOpen] = useState(false);
-  const [networkGraphOpen, setNetworkGraphOpen] = useState(false);
-  const [focusModeOpen, setFocusModeOpen] = useState(false);
 
   return (
-    <ThemeProvider theme={useSelector(selectTheme)}>
+    <ThemeProvider theme={state.config.theme}>
       <GlobalStyles />
       <Window
         style={{
@@ -97,55 +72,22 @@ export default function App() {
           flexDirection: 'column',
         }}
       >
-        <SettingsDialog
-          isOpen={settingsOpen}
-          closeThisWindow={() => setSettingsOpen(false)}
-        />
+        <SettingsDialog global={global} />
 
-        <ArtDialog />
-        <AboutDialog
-          isOpen={aboutDialogOpen}
-          closeThisWindow={() => setAboutDialogOpen(false)}
-        />
-        <HelpDialog
-          isOpen={helpDialogOpen}
-          closeThisWindow={() => setHelpDialogOpen(false)}
-        />
-        {contactDialogOpen && (
-          <ContactDialog
-            isOpen={contactDialogOpen}
-            closeThisWindow={() => setContactDialogOpen(false)}
-          />
-        )}
-        <TodoDialog
-          isOpen={todoDialogOpen}
-          closeThisWindow={() => setTodoDialogOpen(false)}
-        />
-        <WhyDialog
-          isOpen={whyDialogOpen}
-          closeThisWindow={() => setWhyDialogOpen(false)}
-        />
-
-        <AuthDialog
-          isOpen={authDialogOpen}
-          closeThisWindow={() => setAuthDialogOpen(false)}
-          triggerLogin={() => {}}
-        />
-        <NetworkGraphDialog
-          isOpen={networkGraphOpen}
-          closeThisWindow={() => setNetworkGraphOpen(false)}
-          delays={[]}
-        />
-        <ErrorDialog />
-        <FocusModeDialog
-          isOpen={focusModeOpen}
-          closeThisWindow={() => setFocusModeOpen(false)}
-        />
+        <ArtDialog global={global} />
+        <AboutDialog global={global} />
+        <HelpDialog global={global} />
+        {state.windowOpen.contact && <ContactDialog global={global} />}
+        <TodoDialog global={global} />
+        <AuthDialog global={global} />
+        <NetworkGraphDialog global={global} />
+        <ErrorDialog global={global} />
+        <FocusModeDialog global={global} />
         <WindowHeader
-          title="Spotify95"
+          title="Subsonic95"
           className="window-title dragApplication"
         >
-          <span style={{ flexGrow: 1 }}>Spotify95</span>
+          <span style={{ flexGrow: 1 }}>Subsonic95</span>
           <Button
             className="clickableUnderDraggable"
             onClick={() => {
@@ -167,9 +109,10 @@ export default function App() {
           <MenuButtonWithDropDown
             buttonText="File"
             menuOptions={[
-              { text: 'Settings', onClick: () => setSettingsOpen(true) },
-              { text: 'API Tester', onClick: () => setApiTesterOpen(true) },
-              { text: 'Debugger', onClick: () => setDebuggerIsOpen(true) },
+              {
+                text: 'Settings',
+                onClick: () => dispatch({ windowOpen: { settings: true } }),
+              },
             ]}
           />
           <MenuButtonWithDropDown
@@ -177,40 +120,36 @@ export default function App() {
             menuOptions={[
               {
                 text: 'About',
-                onClick: () => setAboutDialogOpen(true),
+                onClick: () => dispatch({ windowOpen: { about: true } }),
               },
               {
                 text: 'Todo',
-                onClick: () => setTodoDialogOpen(true),
-              },
-              {
-                text: 'Why',
-                onClick: () => setWhyDialogOpen(true),
+                onClick: () => dispatch({ windowOpen: { todo: true } }),
               },
             ]}
           />
-          <Button variant="thin" onClick={() => setFocusModeOpen(true)}>
+          <Button
+            variant="thin"
+            onClick={() => dispatch({ windowOpen: { focus: true } })}
+          >
             Focus
           </Button>
-          <Button variant="thin" onClick={() => setHelpDialogOpen(true)}>
+          <Button
+            variant="thin"
+            onClick={() => dispatch({ windowOpen: { help: true } })}
+          >
             Help
           </Button>
-          <Button variant="thin" onClick={() => setContactDialogOpen(true)}>
+          <Button
+            variant="thin"
+            onClick={() => dispatch({ windowOpen: { contact: true } })}
+          >
             Contact
           </Button>
           <span style={{ flexGrow: 1 }} />
 
           <Button
-            onClick={() => {
-              setSearchOpen(true);
-            }}
-            style={{ marginLeft: 4 }}
-          >
-            🔎
-          </Button>
-
-          <Button
-            onClick={() => setNetworkGraphOpen(true)}
+            onClick={() => dispatch({ windowOpen: { network: true } })}
             className="toolbarButton"
           >
             <div
@@ -220,16 +159,16 @@ export default function App() {
                 minWidth: '5rem',
               }}
             >
-              📶 {'PLACEHOLDER'}
+              📶 {'Network'}
             </div>
           </Button>
           <Button
             onMouseOver={() => setTokenButtonHover(true)}
             onMouseLeave={() => setTokenButtonHover(false)}
-            onClick={() => setAuthDialogOpen(true)}
+            onClick={() => dispatch({ windowOpen: { auth: true } })}
             style={{ marginLeft: 4, width: 100 }}
           >
-            <div>{'PLACEHOLDER'}</div>
+            <div>{'Auth'}</div>
           </Button>
         </Toolbar>
         <Separator />
@@ -245,10 +184,13 @@ export default function App() {
           }}
         >
           <FlexColumn
-            style={{ width: `${leftPanelBigger ? 70 : 30}%`, height: '100%' }}
+            style={{
+              width: `${state.ui.leftPanelBigger ? 70 : 30}%`,
+              height: '100%',
+            }}
           >
-            <LibraryTree />
-            {showAlbumArt && !leftPanelBigger && (
+            <LibraryTree global={global} />
+            {state.ui.showAlbumArt && !state.ui.leftPanelBigger && (
               <Window
                 title={'Artwork'}
                 style={{
@@ -273,7 +215,9 @@ export default function App() {
 
                   <Button
                     className="toolbarButton clickableUnderDraggable"
-                    onClick={() => dispatch(toggleShowAlbumArt())}
+                    onClick={() =>
+                      dispatch({ ui: { showAlbumArt: !state.ui.showAlbumArt } })
+                    }
                   >
                     ✕
                   </Button>
@@ -281,20 +225,22 @@ export default function App() {
                 <img style={{ height: 365, width: 365 }} />
               </Window>
             )}
-            {!showAlbumArt && !leftPanelBigger && (
+            {!state.ui.showAlbumArt && !state.ui.leftPanelBigger && (
               <Button
                 className="toolbarButton clickableUnderDraggable"
-                onClick={() => dispatch(toggleShowAlbumArt())}
+                onClick={() =>
+                  dispatch({ ui: { showAlbumArt: !state.ui.showAlbumArt } })
+                }
                 style={{ width: 100, height: 30, marginTop: 5 }}
                 disabled={false}
               >
-                {`${showAlbumArt ? 'hide' : 'show'} art`}
+                {`${state.ui.showAlbumArt ? 'hide' : 'show'} art`}
               </Button>
             )}
           </FlexColumn>
           <div
             style={{
-              width: `${leftPanelBigger ? 30 : 70}%`,
+              width: `${state.ui.leftPanelBigger ? 30 : 70}%`,
               height: '100%',
               display: 'flex',
               flexDirection: 'column',
@@ -303,9 +249,15 @@ export default function App() {
             <Toolbar>
               <Button
                 variant="thin"
-                onClick={() => setLeftPanelBigger(!leftPanelBigger)}
+                onClick={() =>
+                  dispatch({
+                    ui: { leftPanelBigger: !state.ui.leftPanelBigger },
+                  })
+                }
                 style={{
-                  transform: leftPanelBigger ? 'scaleX(-1)' : undefined,
+                  transform: state.ui.leftPanelBigger
+                    ? 'scaleX(-1)'
+                    : undefined,
                 }}
               >
                 👉
@@ -313,15 +265,24 @@ export default function App() {
               <span style={{ flexGrow: 1 }}></span>
               <Button
                 style={{ marginLeft: '.5rem' }}
-                onClick={() => dispatch(togglePlayerView())}
+                onClick={() =>
+                  dispatch({
+                    ui: {
+                      playerView:
+                        state.ui.playerView === 'group'
+                          ? 'individual'
+                          : 'group',
+                    },
+                  })
+                }
               >
-                {playerView === 'individual'
+                {state.ui.playerView === 'individual'
                   ? `Individual Tracks`
                   : `Group Tracks By Artist/Album`}
               </Button>
               <VolumeSlider />
             </Toolbar>
-            <PlayerList />
+            <PlayerList global={global} />
           </div>
         </div>
       </Window>

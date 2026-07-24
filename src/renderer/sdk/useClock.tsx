@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 
 type IProps = {
@@ -17,7 +16,7 @@ export const useClock = (props: IProps) => {
         setTimeout(() => effectCallback(abortController), delay);
       }
     },
-    [effect, delay]
+    [effect, delay],
   );
 
   useEffect(() => {

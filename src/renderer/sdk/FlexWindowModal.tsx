@@ -1,7 +1,7 @@
 import { Button, Toolbar, Window, WindowHeader } from 'react95';
 import { ReactNode } from 'react';
-import { Modal } from 'renderer/sdk/Modal';
-import Label from 'renderer/sdk/Label';
+import { Modal } from '../sdk/Modal';
+import Label from '../sdk/Label';
 import { isNil } from 'lodash';
 
 export type BottomButton = {

@@ -31,6 +31,14 @@ ipcMain.on('ipc-example', async (event, arg) => {
   event.reply('ipc-example', msgTemplate('pong'));
 });
 
+ipcMain.on('quitButton', () => {
+  app.quit();
+});
+
+ipcMain.on('minimizeButton', () => {
+  mainWindow?.minimize();
+});
+
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
   sourceMapSupport.install();
@@ -79,6 +87,8 @@ const createWindow = async () => {
         ? path.join(__dirname, 'preload.js')
         : path.join(__dirname, '../../.erb/dll/preload.js'),
     },
+    frame: false,
+    resizable: false,
   });
 
   mainWindow.loadURL(resolveHtmlPath('index.html'));
@@ -92,6 +102,7 @@ const createWindow = async () => {
     } else {
       mainWindow.show();
     }
+    mainWindow.webContents.setZoomFactor(0.8);
   });
 
   mainWindow.on('closed', () => {

@@ -1,21 +1,21 @@
 import { Anchor, Frame, ScrollView } from 'react95';
 import { FlexWindowModal } from '../sdk/FlexWindowModal';
 import { logo } from '../images';
+import { GlobalReducer } from '../hooks/useGlobalState';
 
 type IProps = {
-  isOpen: boolean;
-  closeThisWindow: () => void;
+  global: GlobalReducer;
 };
 
 export const AboutDialog = (props: IProps) => {
-  const { isOpen, closeThisWindow } = props;
+  const [state, dispatch] = props.global;
   return (
     <FlexWindowModal
       title={'About'}
       height={450}
       width={500}
-      isOpen={isOpen}
-      onClose={closeThisWindow}
+      isOpen={state.windowOpen.about}
+      onClose={() => dispatch({ windowOpen: { about: false } })}
       provideCloseButton
     >
       <div
@@ -35,7 +35,7 @@ export const AboutDialog = (props: IProps) => {
             target={'_blank'}
             href="https://williamsease.github.io/spotify-95"
           >
-            Spotify95
+            Subsonic95
           </Anchor>{' '}
           0.1.2
         </div>
@@ -64,14 +64,14 @@ export const AboutDialog = (props: IProps) => {
 };
 
 export const TodoDialog = (props: IProps) => {
-  const { isOpen, closeThisWindow } = props;
+  const [state, dispatch] = props.global;
   return (
     <FlexWindowModal
       title={'Todo'}
       height={400}
       width={500}
-      isOpen={isOpen}
-      onClose={closeThisWindow}
+      isOpen={state.windowOpen.todo}
+      onClose={() => dispatch({ windowOpen: { todo: false } })}
       provideCloseButton
     >
       <Frame
@@ -96,54 +96,6 @@ export const TodoDialog = (props: IProps) => {
           </div>
           <div>Unbreak resizing make the main window resizable</div>
           <div>Persistent settings & more settings</div>
-        </ScrollView>
-      </Frame>
-    </FlexWindowModal>
-  );
-};
-
-export const WhyDialog = (props: IProps) => {
-  const { isOpen, closeThisWindow } = props;
-  return (
-    <FlexWindowModal
-      title={'Why'}
-      height={400}
-      width={500}
-      isOpen={isOpen}
-      onClose={closeThisWindow}
-      provideCloseButton
-    >
-      <Frame
-        variant="field"
-        style={{
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          margin: 10,
-        }}
-      >
-        <ScrollView style={{ height: 335 }}>
-          <div style={{ fontWeight: 'bold' }}>Why Spotify95?</div>
-          <div>
-            The primary goal here was to build a version of Spotify that looked
-            and behaved more like{' '}
-            <Anchor target={'_blank'} href={'https://www.foobar2000.org/'}>
-              Foobar2000
-            </Anchor>
-            .
-          </div>
-          <div>
-            Less emphasis on the algorithm serving you one track after an
-            another
-          </div>
-          <div>
-            More emphasis on having you queue up some albums and then not really
-            touching the player.
-          </div>
-          <div>
-            Browsing your favorite artists/albums/playlists with a tree is also
-            the only sensible way to do it
-          </div>
         </ScrollView>
       </Frame>
     </FlexWindowModal>

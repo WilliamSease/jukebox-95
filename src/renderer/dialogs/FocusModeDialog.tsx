@@ -1,18 +1,17 @@
 import { isNil } from 'lodash';
 import { useCallback, useMemo, useState } from 'react';
-import { useSelector } from 'react-redux';
 import { Button, TextInput, Toolbar } from 'react95';
 import { formatMs } from '../functions/formatFunctions';
 import { FlexColumn, FlexRow } from '../sdk/FlexElements';
 import { FlexWindowModal } from '../sdk/FlexWindowModal';
 import Label from '../sdk/Label';
+import { GlobalReducer } from '../hooks/useGlobalState';
 
 type IProps = {
-  isOpen: boolean;
-  closeThisWindow: () => void;
+  global: GlobalReducer;
 };
 export const FocusModeDialog = (props: IProps) => {
-  const { isOpen, closeThisWindow } = props;
+  const [state, dispatch] = props.global;
 
   const nowPlaying = {};
   const playbackState = {};
@@ -37,7 +36,7 @@ export const FocusModeDialog = (props: IProps) => {
       title={'Focus Mode'}
       height={800}
       width={800}
-      isOpen={isOpen}
+      isOpen={state.windowOpen.focus}
       onClose={() => {
         if (isNil(captcha)) nextCaptcha();
       }}
@@ -95,7 +94,7 @@ export const FocusModeDialog = (props: IProps) => {
                 disabled={captchaInput !== captcha}
                 onClick={() => {
                   setCaptcha(null);
-                  closeThisWindow();
+                  dispatch({ windowOpen: { focus: false } });
                 }}
               >
                 Confirm

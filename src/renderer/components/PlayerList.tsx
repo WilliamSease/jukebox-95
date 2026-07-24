@@ -1,24 +1,15 @@
-import { useDispatch, useSelector } from 'react-redux';
 import { Button, Frame, ScrollView, Slider, Toolbar } from 'react95';
-import {
-  selectPlayerView,
-  selectTracksInPlayer,
-  setToPlayer,
-} from '../state/store';
+
 import { formatMs } from '../functions/formatFunctions';
 import { AlternateGrey } from '../sdk/ThemedComponents';
 import { FlexColumn } from '../sdk/FlexElements';
 import { useCallback, useState } from 'react';
 import Label from '../sdk/Label';
 import { isNil } from 'lodash';
+import { GlobalReducer } from '../hooks/useGlobalState';
 
-export function PlayerList() {
-  const dispatch = useDispatch();
-
-  const tracksInPlayer = useSelector(selectTracksInPlayer);
-  const playerView = useSelector(selectPlayerView);
-  const playbackState = {};
-  const nowPlaying = {};
+export function PlayerList(props: { global: GlobalReducer }) {
+  const [state, dispatch] = props.global;
 
   const [highlighted, setHighlighted] = useState<number>(0);
   const compileTrackInfo = useCallback(
@@ -47,7 +38,7 @@ export function PlayerList() {
             };
             return (
               <>
-                {playerView === 'individual' && (
+                {state.ui.playerView === 'individual' && (
                   <AlternateGrey
                     index={i}
                     isSelected={i === highlighted}
@@ -80,7 +71,7 @@ export function PlayerList() {
                     </div>
                   </AlternateGrey>
                 )}
-                {playerView === 'group' && (
+                {state.ui.playerView === 'group' && (
                   <>
                     {(i === 0 ||
                       JSON.stringify(compileTrackInfo([][i - 1])) !==
@@ -122,7 +113,7 @@ export function PlayerList() {
       </Frame>
 
       <Toolbar style={{ justifyItems: 'center' }}>
-        {isNil(nowPlaying) ? (
+        {isNil(state.player.nowPlaying) ? (
           `[Nothing Playing]`
         ) : (
           <>
@@ -133,7 +124,7 @@ export function PlayerList() {
             <span>{'ALBUMNAMEPLACEHOLDER'}</span>
 
             <Label style={{ marginLeft: '1rem' }}>Name:</Label>
-            <span>{'TRACKNAMEPLACEHOLDER'}</span>
+            <span>{'TRACKNAME'}</span>
           </>
         )}
       </Toolbar>

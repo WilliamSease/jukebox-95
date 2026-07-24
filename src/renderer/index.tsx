@@ -1,20 +1,16 @@
 import { createRoot } from 'react-dom/client';
 import App from './App';
-import { Provider } from 'react-redux';
-import store from './state/store';
 
 const container = document.getElementById('root') as HTMLElement;
 document.getElementById('root')?.setAttribute('style', 'height:100%');
 const root = createRoot(container);
 root.render(
-  <Provider store={store}>
-    <div
-      style={{ width: '100%', height: '100%' }}
-      onContextMenu={(e) => e.preventDefault()}
-    >
-      <App />
-    </div>
-  </Provider>,
+  <div
+    style={{ width: '100%', height: '100%' }}
+    onContextMenu={(e) => e.preventDefault()}
+  >
+    <App />
+  </div>,
 );
 
 // calling IPC exposed from preload script

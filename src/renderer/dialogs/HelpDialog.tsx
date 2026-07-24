@@ -1,20 +1,20 @@
 import { Frame, ScrollView } from 'react95';
 import { FlexWindowModal } from '../sdk/FlexWindowModal';
+import { GlobalReducer } from '../hooks/useGlobalState';
 
 type IProps = {
-  isOpen: boolean;
-  closeThisWindow: () => void;
+  global: GlobalReducer;
 };
 
 export const HelpDialog = (props: IProps) => {
-  const { isOpen, closeThisWindow } = props;
+  const [state, dispatch] = props.global;
   return (
     <FlexWindowModal
       title={'Help'}
       height={450}
       width={500}
-      isOpen={isOpen}
-      onClose={closeThisWindow}
+      isOpen={state.windowOpen.help}
+      onClose={() => dispatch({ windowOpen: { help: false } })}
       provideCloseButton
     >
       <Frame
@@ -36,7 +36,7 @@ export const HelpDialog = (props: IProps) => {
           </div>
           <div>
             Open spotify and play anything. Once you see it appear in the
-            Spotify95 player, you should be synced up. Hopefully I fix this in
+            Subsonic95 player, you should be synced up. Hopefully I fix this in
             short order.
           </div>
           <hr />

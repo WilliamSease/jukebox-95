@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useMemo, useState } from 'react';
 import {
   Button,
   Frame,
@@ -11,11 +10,13 @@ import {
 } from 'react95';
 
 import './LibraryTree.css';
+import { GlobalReducer, GlobalState } from '../hooks/useGlobalState';
 
-export const LibraryTree = () => {
+export const LibraryTree = (props: { global: GlobalReducer }) => {
+  // const [state, dispatch] = props.global;
+
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(false);
-  const dispatch = useDispatch();
 
   const nodes = useMemo(() => {
     switch (activeTab) {

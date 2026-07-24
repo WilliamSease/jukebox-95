@@ -3,24 +3,24 @@ import { Button, TextInput } from 'react95';
 import { FlexRow } from '../sdk/FlexElements';
 import { FlexWindowModal } from '../sdk/FlexWindowModal';
 import Label from '../sdk/Label';
+import { GlobalReducer } from '../hooks/useGlobalState';
 
 type IProps = {
-  isOpen: boolean;
-  closeThisWindow: () => void;
+  global: GlobalReducer;
 };
 
 export const ContactDialog = (props: IProps) => {
-  const { isOpen, closeThisWindow } = props;
+  const [state, dispatch] = props.global;
 
-  const [state, handleSubmit] = useForm('xkndnwwp');
+  const [formState, handleSubmit] = useForm('xkndnwwp');
 
   return (
     <FlexWindowModal
       title={'Contact'}
       height={450}
       width={500}
-      isOpen={isOpen}
-      onClose={closeThisWindow}
+      isOpen={state.windowOpen.contact}
+      onClose={() => dispatch({ windowOpen: { contact: false } })}
       provideCloseButton
     >
       <div
@@ -49,7 +49,11 @@ export const ContactDialog = (props: IProps) => {
             name="email"
             required
           />
-          <ValidationError prefix="Email" field="email" errors={state.errors} />
+          <ValidationError
+            prefix="Email"
+            field="email"
+            errors={formState.errors}
+          />
           <div>
             <Label htmlFor="message">Message</Label>
             <TextInput
@@ -64,13 +68,13 @@ export const ContactDialog = (props: IProps) => {
           <ValidationError
             prefix="Message"
             field="message"
-            errors={state.errors}
+            errors={formState.errors}
           />
           <FlexRow style={{ marginTop: 10 }}>
-            {state.succeeded && 'Receieved ✔️'}
-            {state.submitting && 'Submitting... ⌛'}
-            {!state.succeeded && !state.submitting && (
-              <Button type="submit" disabled={state.submitting}>
+            {formState.succeeded && 'Receieved ✔️'}
+            {formState.submitting && 'Submitting... ⌛'}
+            {!formState.succeeded && !formState.submitting && (
+              <Button type="submit" disabled={formState.submitting}>
                 Send
               </Button>
             )}

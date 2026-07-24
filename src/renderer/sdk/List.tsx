@@ -11,8 +11,8 @@ type IProps = {
 type selectedProps = { isSelected: boolean };
 export const StyledDiv = styled.div<selectedProps>`
   ${({ isSelected, theme }) => css`
-    color: ${isSelected ? 'unset' : 'unset'};
-    background: ${isSelected ? 'unset' : 'unset'};
+    color: ${isSelected ? theme.materialTextInvert : 'unset'};
+    background: ${isSelected ? theme.materialText : 'unset'};
     margin-top: 0.2rem;
   `}
 `;
