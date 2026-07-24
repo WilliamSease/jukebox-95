@@ -2,14 +2,16 @@ import { useCallback, useState } from 'react';
 import original from 'react95/dist/themes/original';
 import { Theme } from 'react95/dist/types';
 import { deepMerge, DeepPartial } from './helper';
-import type { SubsonicAPI as SubsonicAPIType } from 'subsonic-api' with { 'resolution-mode': 'import' };
+import type { Child, SubsonicAPI as SubsonicAPIType } from 'subsonic-api' with {
+  'resolution-mode': 'import',
+};
 
 export type GlobalReducer = [
   GlobalState,
   (toModify: DeepPartial<GlobalState>) => void,
 ];
 export interface GlobalState {
-  api: SubsonicAPIType | null;
+  apiReady: boolean;
   config: {
     theme: Theme;
   };
@@ -20,24 +22,23 @@ export interface GlobalState {
     leftPanelBigger: boolean;
   };
   player: {
-    tracksInPlayer: any[];
-    nowPlaying: any;
+    tracksInPlayer: Child[];
+    nowPlaying: Child | null;
+    progress: number;
   };
   windowOpen: {
     about: boolean;
     art: boolean;
-    auth: boolean;
     contact: boolean;
     focus: boolean;
     help: boolean;
-    network: boolean;
     settings: boolean;
     todo: boolean;
   };
 }
 
 const initialConfiguration: GlobalState = {
-  api: null,
+  apiReady: false,
   config: { theme: original },
   ui: {
     playerView: 'individual',
@@ -47,16 +48,15 @@ const initialConfiguration: GlobalState = {
   },
   player: {
     tracksInPlayer: [],
-    nowPlaying: {},
+    nowPlaying: null,
+    progress: 0,
   },
   windowOpen: {
     about: false,
     art: false,
-    auth: false,
     contact: false,
     focus: false,
     help: false,
-    network: false,
     settings: false,
     todo: false,
   },

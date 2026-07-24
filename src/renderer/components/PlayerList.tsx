@@ -7,13 +7,14 @@ import { useCallback, useState } from 'react';
 import Label from '../sdk/Label';
 import { isNil } from 'lodash';
 import { GlobalReducer } from '../hooks/useGlobalState';
+import type { Child } from 'subsonic-api' with { 'resolution-mode': 'import' };
 
 export function PlayerList(props: { global: GlobalReducer }) {
   const [state, dispatch] = props.global;
 
   const [highlighted, setHighlighted] = useState<number>(0);
   const compileTrackInfo = useCallback(
-    (item: any) => (item.type === 'track' ? [``] : [item.show.name]),
+    (item: Child) => [`${item.albumArtists?.join(' ,')}`, `${item.album}`],
     [],
   );
 
@@ -28,11 +29,11 @@ export function PlayerList(props: { global: GlobalReducer }) {
             display: 'flex',
           }}
         >
-          {[].map((itm, i) => {
+          {state.player.tracksInPlayer.map((itm, i) => {
             const compiledTrackInfo = compileTrackInfo(itm);
             const playThisTrack = () => {
               if (i === highlighted) {
-                //PLAY IT
+                //play these
               }
               setHighlighted(i);
             };
@@ -50,9 +51,11 @@ export function PlayerList(props: { global: GlobalReducer }) {
                         flexDirection: 'row',
                       }}
                     >
-                      <div style={{ width: '3rem' }}>{formatMs(0)}</div>
-                      <div style={{ width: '2rem' }}>🎵</div>
-                      <div style={{ width: '25rem' }}>{'NAMEPLACEHOLDER'}</div>
+                      <div style={{ width: '3rem' }}>
+                        {formatMs(itm.duration ?? 0)}
+                      </div>
+                      <div style={{ width: '2rem' }}>{'🎵'}</div>
+                      <div style={{ width: '25rem' }}>{itm.title}</div>
                       <div style={{ width: '20rem' }}>
                         {compileTrackInfo(itm).map((s, i) =>
                           i % 2 === 0 ? <Label>{s}</Label> : <div>{s}</div>,
@@ -66,7 +69,7 @@ export function PlayerList(props: { global: GlobalReducer }) {
                           display: 'flex',
                         }}
                       >
-                        {false ? '💿' : ''}
+                        {state.player.nowPlaying?.id === itm.id ? '💿' : ''}
                       </div>
                     </div>
                   </AlternateGrey>
@@ -74,8 +77,9 @@ export function PlayerList(props: { global: GlobalReducer }) {
                 {state.ui.playerView === 'group' && (
                   <>
                     {(i === 0 ||
-                      JSON.stringify(compileTrackInfo([][i - 1])) !==
-                        JSON.stringify(compileTrackInfo(itm))) && (
+                      JSON.stringify(
+                        compileTrackInfo(state.player.tracksInPlayer[i - 1]),
+                      ) !== JSON.stringify(compileTrackInfo(itm))) && (
                       <div>
                         <Label>{`${compiledTrackInfo[0]} ${`/ ${compiledTrackInfo[1]}`}`}</Label>
                       </div>
@@ -90,9 +94,11 @@ export function PlayerList(props: { global: GlobalReducer }) {
                       }}
                       onClick={playThisTrack}
                     >
-                      <div style={{ width: '3rem' }}>{formatMs(0)}</div>
+                      <div style={{ width: '3rem' }}>
+                        {formatMs(itm.duration ?? 0)}
+                      </div>
                       <div style={{ width: '2rem' }}>{'🎵'}</div>
-                      <div style={{ width: '43rem' }}>{'NAMEPLACEHOLDER'}</div>
+                      <div style={{ width: '43rem' }}>{itm.title}</div>
                       <div
                         style={{
                           width: '2rem',
@@ -101,7 +107,7 @@ export function PlayerList(props: { global: GlobalReducer }) {
                           display: 'flex',
                         }}
                       >
-                        {false ? '💿' : ''}
+                        {state.player.nowPlaying?.id === itm.id ? '💿' : ''}
                       </div>
                     </AlternateGrey>
                   </>
@@ -118,79 +124,165 @@ export function PlayerList(props: { global: GlobalReducer }) {
         ) : (
           <>
             <Label style={{ marginLeft: '1rem' }}>{`Artist: `}</Label>
-            <span>{'ARTISTNAMEPLACEHOLDER'}</span>
+            <span>{state.player.nowPlaying.displayAlbumArtist}</span>
 
             <Label style={{ marginLeft: '1rem' }}>Album:</Label>
-            <span>{'ALBUMNAMEPLACEHOLDER'}</span>
+            <span>{state.player.nowPlaying.album}</span>
 
             <Label style={{ marginLeft: '1rem' }}>Name:</Label>
-            <span>{'TRACKNAME'}</span>
+            <span>{state.player.nowPlaying.title}</span>
           </>
         )}
       </Toolbar>
       <Slider
         size={800}
-        value={(0 / 0) * 100}
+        value={
+          ((state.player?.progress ?? 0) /
+            (state.player.nowPlaying?.duration ?? 0)) *
+          100
+        }
         style={{ marginLeft: '1.4rem', marginBottom: '0' }}
         orientation="horizontal"
-        onChangeCommitted={(value) => {}}
+        onChangeCommitted={(value) => {
+          ((seek: number) => {})(
+            Math.floor(
+              ((state.player.nowPlaying?.duration ?? 0) / 100) * value,
+            ),
+          );
+        }}
       />
       <Toolbar style={{ marginLeft: '1rem' }}>
-        <Button
+        {/**<Button
           onClick={() => {
-            //PLAY
+            if (!checkActionable()) return;
+            if (!playbackState?.is_playing) spotify.play();
           }}
-          disabled={false}
+          disabled={playbackState?.is_playing}
           className="toolbarButton"
         >
           ⏵
         </Button>
-        <Button disabled={false} onClick={() => {}} className="toolbarButton">
+        <Button
+          disabled={!playbackState?.is_playing}
+          onClick={() => {
+            if (!checkActionable()) return;
+
+            if (playbackState?.is_playing) spotify.pause();
+          }}
+          className="toolbarButton"
+        >
           ⏸
         </Button>
-        <Button disabled={false} onClick={() => {}} className="toolbarButton">
+        <Button
+          disabled={!playbackState?.is_playing}
+          onClick={() => {
+            if (!checkActionable()) return;
+
+            if (playbackState?.is_playing) spotify.pause();
+            spotify.seek(0);
+          }}
+          className="toolbarButton"
+        >
           ⏹
         </Button>
-        <Button disabled={false} onClick={() => {}} className="toolbarButton">
+        <Button
+          onClick={() => {
+            if (!checkActionable()) return;
+
+            if (playbackState?.is_playing) spotify.pause();
+            spotify.seek(0);
+            dispatch(setToPlayer([]));
+          }}
+          className="toolbarButton"
+        >
           ⏏
         </Button>
         <Button
           onClick={() => {
-            if (0 < 5000) {
-            } else {
-              //restart track
-            }
+            if (!checkActionable()) return;
+
+            if ((playbackState?.progress_ms ?? 0) < 5000) {
+              let currentItemIndex = tracksInPlayer.findIndex(
+                (playable) => playable.id === playbackState?.item?.id,
+              );
+              let notBelowZero =
+                currentItemIndex - 1 < 0 ? 0 : currentItemIndex - 1;
+              spotify.play({
+                uris: tracksInPlayer
+                  .slice(notBelowZero, tracksInPlayer.length)
+                  .map((playable) => playable.uri),
+              });
+            } else spotify.seek(0);
           }}
           className="toolbarButton"
         >
           ⏮
         </Button>
-        <Button onClick={() => {}} className="toolbarButton">
+        <Button
+          onClick={() => {
+            if (!checkActionable()) return;
+
+            spotify.skipToNext();
+          }}
+          className="toolbarButton"
+        >
           ⏭
         </Button>
         <Button
-          variant={false ? 'flat' : 'default'}
-          onClick={() => {}}
+          variant={playbackState?.repeat_state === 'track' ? 'flat' : 'default'}
+          onClick={() => {
+            {
+              if (!checkActionable()) return;
+              spotify.setRepeat(
+                playbackState?.repeat_state === 'off' ? 'track' : 'off',
+              );
+            }
+          }}
           className="toolbarButton"
         >
           Repeat
         </Button>
         <Button
-          onClick={() => {}}
-          variant={false ? 'flat' : 'default'}
+          onClick={() => {
+            if (!checkActionable()) return;
+            spotify.setShuffle(!playbackState?.shuffle_state);
+          }}
+          variant={playbackState?.shuffle_state ? 'flat' : 'default'}
           className="toolbarButton"
         >
           Shuffle
         </Button>
-        <Button disabled={false} onClick={() => {}} className="toolbarButton">
+        <Button
+          disabled={!playbackState?.is_playing}
+          onClick={() => {
+            if (playbackState?.is_playing) {
+              const seek = (playbackState?.progress_ms ?? 15000) - 15000;
+              spotify.seek(seek >= 0 ? seek : 0);
+            }
+          }}
+          className="toolbarButton"
+        >
           ⏴ 15s
         </Button>
-        <Button disabled={false} onClick={() => {}} className="toolbarButton">
+        <Button
+          disabled={!playbackState?.is_playing}
+          onClick={() => {
+            if (playbackState?.is_playing) {
+              let seek = (playbackState?.progress_ms ?? 0) + 15000;
+              if (seek > (nowPlaying?.duration_ms ?? 0)) {
+                seek = nowPlaying?.duration_ms ?? 0;
+              }
+              spotify.seek(seek);
+            }
+          }}
+          className="toolbarButton"
+        >
           15s ⏵
         </Button>
         <span style={{ marginLeft: '.5rem', marginRight: '.5rem' }}>
-          {formatMs(0)} / {formatMs(0)}
-        </span>
+          {formatMs(playbackState?.progress_ms ?? 0)} /{' '}
+          {formatMs(nowPlaying?.duration_ms ?? 0)}
+        </span>**/}
       </Toolbar>
     </FlexColumn>
   );

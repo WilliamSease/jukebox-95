@@ -18,7 +18,7 @@ import { isNil } from 'lodash';
 import { SettingsDialog } from './dialogs/SettingsDialog';
 import { VolumeSlider } from './components/VolumeSlider';
 import { ArtDialog } from './dialogs/ArtDialog';
-import { LibraryTree } from './components/LibraryTree';
+import { LibraryTree } from './components/LibraryTree/LibraryTree';
 import { PlayerList } from './components/PlayerList';
 import { AboutDialog, TodoDialog } from './dialogs/AboutDialog';
 import { FlexColumn } from './sdk/FlexElements';
@@ -55,12 +55,12 @@ const GlobalStyles = createGlobalStyle`
   }
 `;
 
-import type { SubsonicAPI as SubsonicAPIType } from 'subsonic-api' with { 'resolution-mode': 'import' };
-
 export default function App() {
   const global = useGlobalState();
   const [state, dispatch] = global;
   const [tokenButtonHover, setTokenButtonHover] = useState(false);
+
+  useClock({ effect: async () => {}, delay: 100 });
 
   return (
     <ThemeProvider theme={state.config.theme}>
@@ -148,29 +148,6 @@ export default function App() {
             Contact
           </Button>
           <span style={{ flexGrow: 1 }} />
-
-          <Button
-            onClick={() => dispatch({ windowOpen: { network: true } })}
-            className="toolbarButton"
-          >
-            <div
-              style={{
-                backgroundColor: undefined === 'Desync' ? 'red' : undefined,
-                padding: '.2rem',
-                minWidth: '5rem',
-              }}
-            >
-              📶 {'Network'}
-            </div>
-          </Button>
-          <Button
-            onMouseOver={() => setTokenButtonHover(true)}
-            onMouseLeave={() => setTokenButtonHover(false)}
-            onClick={() => dispatch({ windowOpen: { auth: true } })}
-            style={{ marginLeft: 4, width: 100 }}
-          >
-            <div>{'Auth'}</div>
-          </Button>
         </Toolbar>
         <Separator />
         <div
