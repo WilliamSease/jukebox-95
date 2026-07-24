@@ -99,11 +99,10 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.11.2",
     "react95": "^4.0.0",
-    "subsonic-api": "^3.3.1",
-    "styled-components": "5.3.11"
+    "styled-components": "5.3.11",
+    "subsonic-api": "^3.3.1"
   },
   "devDependencies": {
-    "@types/styled-components": "^5.1.26",
     "@electron/rebuild": "^3.7.1",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.15",
     "@svgr/webpack": "^8.1.0",
@@ -116,6 +115,7 @@
     "@types/react": "^19.0.11",
     "@types/react-dom": "^19.0.4",
     "@types/react-test-renderer": "^19.0.0",
+    "@types/styled-components": "^5.1.26",
     "@types/webpack-bundle-analyzer": "^4.7.0",
     "@typescript-eslint/eslint-plugin": "^8.26.1",
     "@typescript-eslint/parser": "^8.26.1",

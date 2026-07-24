@@ -55,10 +55,11 @@ const GlobalStyles = createGlobalStyle`
   }
 `;
 
+import type { SubsonicAPI as SubsonicAPIType } from 'subsonic-api' with { 'resolution-mode': 'import' };
+
 export default function App() {
   const global = useGlobalState();
   const [state, dispatch] = global;
-
   const [tokenButtonHover, setTokenButtonHover] = useState(false);
 
   return (

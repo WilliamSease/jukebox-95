@@ -2,12 +2,14 @@ import { useCallback, useState } from 'react';
 import original from 'react95/dist/themes/original';
 import { Theme } from 'react95/dist/types';
 import { deepMerge, DeepPartial } from './helper';
+import type { SubsonicAPI as SubsonicAPIType } from 'subsonic-api' with { 'resolution-mode': 'import' };
 
 export type GlobalReducer = [
   GlobalState,
   (toModify: DeepPartial<GlobalState>) => void,
 ];
 export interface GlobalState {
+  api: SubsonicAPIType | null;
   config: {
     theme: Theme;
   };
@@ -35,6 +37,7 @@ export interface GlobalState {
 }
 
 const initialConfiguration: GlobalState = {
+  api: null,
   config: { theme: original },
   ui: {
     playerView: 'individual',
