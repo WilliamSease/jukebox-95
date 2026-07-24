@@ -38,7 +38,8 @@ type TreeBranchProps<T> = {
   expanded: T[];
   innerRef?: React.Ref<HTMLUListElement>;
   level: number;
-  select: (event: React.MouseEvent<HTMLElement>, item: TreeLeaf<T>) => void;
+  onSelect: (event: React.MouseEvent<HTMLElement>, id: T) => void;
+  onToggle: (event: React.MouseEvent<HTMLElement>, id: T) => void;
   selected: T | undefined;
   style: React.CSSProperties | undefined;
   tree: TreeLeaf<T>[];
@@ -140,7 +141,12 @@ const TreeItem = styled.li<{ hasItems: boolean; isRootLevel: boolean }>`
           }
         `}
 
-  & > details > ul {
+  /* the nested <ul> of children needs to sit above the dashed
+     connector line drawn by the rules above */
+  & > ul {
+    position: relative;
+    z-index: 2;
+
     &:after {
       content: '';
       position: absolute;
@@ -152,41 +158,39 @@ const TreeItem = styled.li<{ hasItems: boolean; isRootLevel: boolean }>`
   }
 `;
 
-const Details = styled.details`
-  position: relative;
-  z-index: 2;
-
-  &[open] > summary:before {
-    content: '-';
-  }
-`;
-
-const Summary = styled.summary`
+const Row = styled.div<{ $hasItems: boolean }>`
   position: relative;
   z-index: 1;
   display: inline-flex;
   align-items: center;
-  color: ${({ theme }) => theme.materialText};
-  user-select: none;
-  padding-left: 18px;
-  ${focusedElementStyles};
+  /* leave room for the expand/collapse box when this node has children */
+  padding-left: ${({ $hasItems }) => ($hasItems ? '18px' : '0')};
+`;
 
-  &::-webkit-details-marker {
-    display: none;
+const ExpandToggle = styled.button`
+  all: unset;
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  box-sizing: border-box;
+  display: block;
+  width: 8px;
+  height: 9px;
+  border: 2px solid #808080;
+  padding-left: 1px;
+  background-color: #fff;
+  line-height: 8px;
+  font-size: 10px;
+  text-align: center;
+  cursor: pointer;
+
+  &:disabled {
+    cursor: default;
   }
 
-  &:before {
-    content: '+';
-    position: absolute;
-    left: 0;
-    display: block;
-    width: 8px;
-    height: 9px;
-    border: 2px solid #808080;
-    padding-left: 1px;
-    background-color: #fff;
-    line-height: 8px;
-    text-align: center;
+  &:focus-visible {
+    outline: 2px dotted ${({ theme }) => theme.focusSecondary};
   }
 `;
 
@@ -217,92 +221,19 @@ function toggleItem<T>(state: T[], id: T) {
     : [...state, id];
 }
 
-function preventDefault(event: React.SyntheticEvent) {
-  event.preventDefault();
-}
-
 function TreeBranch<T>({
   className,
   disabled,
   expanded,
   innerRef,
   level,
-  select,
+  onSelect,
+  onToggle,
   selected,
   style,
   tree = [],
 }: TreeBranchProps<T>) {
   const isRootLevel = level === 0;
-
-  const renderLeaf = useCallback(
-    (item: TreeLeaf<T>) => {
-      const hasItems = Boolean(item.items && item.items.length > 0);
-      const isMenuShown = expanded.includes(item.id);
-      const isNodeDisabled = (disabled || item.disabled) ?? false;
-      const onClickSummary = !isNodeDisabled
-        ? (event: React.MouseEvent<HTMLLabelElement>) => select(event, item)
-        : preventDefault;
-      const onClickLeaf = !isNodeDisabled
-        ? (event: React.MouseEvent<HTMLElement>) => select(event, item)
-        : preventDefault;
-      const isSelected = selected === item.id;
-      const icon = <Icon aria-hidden>{item.icon}</Icon>;
-
-      return (
-        <TreeItem
-          key={item.label}
-          isRootLevel={isRootLevel}
-          role="treeitem"
-          aria-expanded={isMenuShown}
-          aria-selected={isSelected}
-          hasItems={hasItems}
-        >
-          {!hasItems ? (
-            <TitleWithIcon
-              as="button"
-              $disabled={isNodeDisabled}
-              onClick={onClickLeaf}
-            >
-              {icon}
-              <Text>{item.label}</Text>
-            </TitleWithIcon>
-          ) : (
-            <Details open={isMenuShown}>
-              <Summary onClick={onClickSummary} $disabled={isNodeDisabled}>
-                <TitleWithIcon $disabled={isNodeDisabled}>
-                  {icon}
-                  <Text>{item.label}</Text>
-                </TitleWithIcon>
-              </Summary>
-
-              {isMenuShown && (
-                <TreeBranch
-                  className={className}
-                  disabled={isNodeDisabled}
-                  expanded={expanded}
-                  level={level + 1}
-                  select={select}
-                  selected={selected}
-                  style={style}
-                  tree={item.items ?? []}
-                />
-              )}
-            </Details>
-          )}
-        </TreeItem>
-      );
-    },
-    [
-      className,
-      disabled,
-      expanded,
-      isRootLevel,
-      level,
-      select,
-      selected,
-      style,
-    ],
-  );
 
   return (
     <TreeWrapper
@@ -312,7 +243,73 @@ function TreeBranch<T>({
       role={isRootLevel ? 'tree' : 'group'}
       isRootLevel={isRootLevel}
     >
-      {tree.map(renderLeaf)}
+      {tree.map((item) => {
+        const hasItems = Boolean(item.items && item.items.length > 0);
+        const isExpanded = expanded.includes(item.id);
+        const isSelected = selected === item.id;
+        const isNodeDisabled = (disabled || item.disabled) ?? false;
+
+        // Two independent actions, two independent handlers.
+        // Clicking the box toggles expansion and nothing else.
+        const handleToggleClick = (event: React.MouseEvent<HTMLElement>) => {
+          event.stopPropagation();
+          if (!isNodeDisabled) onToggle(event, item.id);
+        };
+
+        // Clicking the label/icon selects and nothing else.
+        const handleSelectClick = (event: React.MouseEvent<HTMLElement>) => {
+          if (!isNodeDisabled) onSelect(event, item.id);
+        };
+
+        return (
+          <TreeItem
+            key={String(item.id)}
+            isRootLevel={isRootLevel}
+            role="treeitem"
+            aria-expanded={hasItems ? isExpanded : undefined}
+            aria-selected={isSelected}
+            hasItems={hasItems}
+          >
+            <Row $hasItems={hasItems}>
+              {hasItems && (
+                <ExpandToggle
+                  type="button"
+                  tabIndex={isNodeDisabled ? -1 : 0}
+                  disabled={isNodeDisabled}
+                  aria-label={isExpanded ? 'Collapse' : 'Expand'}
+                  onClick={handleToggleClick}
+                >
+                  {isExpanded ? '-' : '+'}
+                </ExpandToggle>
+              )}
+
+              <TitleWithIcon
+                as="button"
+                type="button"
+                $disabled={isNodeDisabled}
+                onClick={handleSelectClick}
+              >
+                <Icon aria-hidden>{item.icon}</Icon>
+                <Text>{item.label}</Text>
+              </TitleWithIcon>
+            </Row>
+
+            {hasItems && isExpanded && (
+              <TreeBranch
+                className={className}
+                disabled={isNodeDisabled}
+                expanded={expanded}
+                level={level + 1}
+                onSelect={onSelect}
+                onToggle={onToggle}
+                selected={selected}
+                style={style}
+                tree={item.items ?? []}
+              />
+            )}
+          </TreeItem>
+        );
+      })}
     </TreeWrapper>
   );
 }
@@ -348,21 +345,20 @@ function TreeInner<T>(
     valuePropName: 'selected',
   });
 
-  const toggleMenu = useCallback(
+  const handleToggle = useCallback(
     (event: React.MouseEvent<HTMLElement>, id: T) => {
+      const newState = toggleItem(expandedInternal, id);
+
+      setExpandedInternal(newState);
+
       if (onNodeToggle) {
-        const newState = toggleItem(expandedInternal, id);
         onNodeToggle(event, newState);
       }
-
-      setExpandedInternal((previouslyExpandedIds: T[]) =>
-        toggleItem(previouslyExpandedIds, id),
-      );
     },
     [expandedInternal, onNodeToggle, setExpandedInternal],
   );
 
-  const select = useCallback(
+  const handleSelect = useCallback(
     (event: React.MouseEvent<HTMLElement>, id: T) => {
       setSelectedInternal(id);
 
@@ -373,17 +369,6 @@ function TreeInner<T>(
     [onNodeSelect, setSelectedInternal],
   );
 
-  const handleSelect = useCallback(
-    (event: React.MouseEvent<HTMLElement>, item: TreeLeaf<T>) => {
-      event.preventDefault();
-      select(event, item.id);
-      if (item.items && item.items.length) {
-        toggleMenu(event, item.id);
-      }
-    },
-    [select, toggleMenu],
-  );
-
   return (
     <TreeBranch
       className={className}
@@ -391,7 +376,8 @@ function TreeInner<T>(
       expanded={expandedInternal}
       level={0}
       innerRef={ref}
-      select={handleSelect}
+      onSelect={handleSelect}
+      onToggle={handleToggle}
       selected={selectedInternal}
       style={style}
       tree={tree}
