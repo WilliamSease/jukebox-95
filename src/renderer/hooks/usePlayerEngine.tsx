@@ -5,20 +5,8 @@ import type { Child, SubsonicAPI as SubsonicAPIType } from 'subsonic-api' with {
 import type { GlobalReducer } from './useGlobalState';
 
 export interface UsePlayerEngineResult {
-  /** Attach this to a hidden <audio> element rendered once in App.tsx. Also
-   *  spread `audioElementKey` onto it as `key` — required, see below. */
+  /** Attach this to a hidden <audio> element rendered once in App.tsx */
   audioRef: React.RefObject<HTMLAudioElement | null>;
-  /**
-   * Pass as `key={audioElementKey}` on the <audio> element. Bumps whenever
-   * preCacheSongs toggles, forcing React to mount a BRAND NEW <audio> DOM
-   * node. This is required, not cosmetic: once an <audio> element has been
-   * used with createMediaElementSource (the precache/visualizer path), the
-   * browser permanently binds it to the Web Audio graph — cross-origin src
-   * assignments on that same element are CORS-taint-checked forever after,
-   * even if you disconnect/null every JS reference to the graph. The only
-   * way to get an unbound element back is a fresh DOM node.
-   */
-  audioElementKey: number;
   /** Resolved, authenticated cover art URL for the current nowPlaying track (or null) */
   albumArtUrl: string | null;
   isPlaying: boolean;
@@ -59,9 +47,8 @@ export interface UsePlayerEngineResult {
   setVolume: (level: number) => void;
   /**
    * Web Audio analyser tapped off the current track, for a spectrum visualizer.
-   * Null until the first track plays under preCacheSongs (created lazily on
-   * first play). Also null whenever preCacheSongs is off. Pass straight to
-   * <AudioVisualizer analyserRef={...} />.
+   * Null until the first track plays (created lazily on first play). Pass
+   * straight to <AudioVisualizer analyserRef={...} />.
    */
   analyserRef: React.RefObject<AnalyserNode | null>;
 }
@@ -85,7 +72,6 @@ export function usePlayerEngine([
   dispatch,
 ]: GlobalReducer): UsePlayerEngineResult {
   const audioRef = useRef<HTMLAudioElement>(null);
-  const [audioElementKey, setAudioElementKey] = useState(0);
   const [albumArtUrl, setAlbumArtUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(false);
@@ -106,35 +92,6 @@ export function usePlayerEngine([
     };
   }, []);
 
-  // Lazily-created Web Audio graph, tapped for the visualizer. Created on first
-  // play under preCacheSongs (not on mount) so context creation happens inside
-  // a real user-gesture chain, per browser autoplay policy. IMPORTANT: once
-  // createMediaElementSource is called, the <audio> element is PERMANENTLY
-  // bound to this graph — see audioElementKey doc above for why that matters.
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-
-  // Whenever preCacheSongs actually changes, the current <audio> element (if
-  // it was ever graph-bound) can no longer play cross-origin audio cleanly —
-  // force a brand new element via key, and drop all references to the old
-  // element's now-orphaned audio graph.
-  const prevPreCacheRef = useRef(globalState.config.preCacheSongs);
-  useEffect(() => {
-    if (prevPreCacheRef.current === globalState.config.preCacheSongs) return;
-    prevPreCacheRef.current = globalState.config.preCacheSongs;
-
-    audioContextRef.current?.close();
-    audioContextRef.current = null;
-    analyserRef.current = null;
-
-    if (currentBlobUrlRef.current) {
-      URL.revokeObjectURL(currentBlobUrlRef.current);
-      currentBlobUrlRef.current = null;
-    }
-
-    setAudioElementKey((k) => k + 1); // remounts the <audio> tag with a fresh DOM node
-  }, [globalState.config.preCacheSongs]);
-
   // Hydrate saved volume once on mount (falls back to 1 if nothing saved yet)
   useEffect(() => {
     window.settings.get<number>('volume').then((saved) => {
@@ -148,10 +105,9 @@ export function usePlayerEngine([
 
   // Keep the actual <audio> element's volume in sync, including right after
   // a new src is assigned (some browsers can reset volume on src changes)
-  // and right after a remount (audioElementKey change -> new element).
   useEffect(() => {
     if (audioRef.current) audioRef.current.volume = volume;
-  }, [volume, audioElementKey]);
+  }, [volume]);
 
   const { nowPlaying, tracksInPlayer, progress } = globalState.player;
 
@@ -170,27 +126,34 @@ export function usePlayerEngine([
     if (last !== nowPlaying.id) historyRef.current.push(nowPlaying.id);
   }, [nowPlaying?.id]);
 
+  // Lazily-created Web Audio graph, tapped for the visualizer. Created on first
+  // play (not on mount) so context creation happens inside a real user-gesture
+  // chain, per browser autoplay policy. IMPORTANT: once createMediaElementSource
+  // is called, ALL of the audio element's output routes through this graph —
+  // source MUST connect through to ctx.destination or playback goes silent.
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+
   const ensureAudioGraph = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio || analyserRef.current) return analyserRef.current;
+    if (globalState.config.preCacheSongs) {
+      const audio = audioRef.current;
+      if (!audio || analyserRef.current) return analyserRef.current;
 
-    const ctx = new AudioContext();
-    const source = ctx.createMediaElementSource(audio);
-    const analyser = ctx.createAnalyser();
-    analyser.fftSize = 64; // 32 frequency bins — chunky, Winamp-scale bars
+      const ctx = new AudioContext();
+      const source = ctx.createMediaElementSource(audio);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 64; // 32 frequency bins — chunky, Winamp-scale bars
 
-    source.connect(analyser);
-    analyser.connect(ctx.destination);
+      source.connect(analyser);
+      analyser.connect(ctx.destination);
 
-    audioContextRef.current = ctx;
-    analyserRef.current = analyser;
-    return analyser;
-  }, []);
+      audioContextRef.current = ctx;
+      analyserRef.current = analyser;
+      return analyser;
+    }
+  }, [globalState.config.preCacheSongs]);
 
-  // Whenever nowPlaying changes to a different track: load and play it.
-  // Both branches funnel through shared error handling / isBuffering reset —
-  // previously the non-precache branch had neither, so a failed load there
-  // left isBuffering stuck true and silently swallowed errors.
+  // Whenever nowPlaying changes to a different track: fetch the stream URL and play it.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio || !nowPlaying) return;
@@ -199,8 +162,8 @@ export function usePlayerEngine([
     setIsBuffering(true);
 
     (async () => {
-      try {
-        if (globalState.config.preCacheSongs) {
+      if (globalState.config.preCacheSongs) {
+        try {
           const { buffer, contentType } = await window.subsonic.fetchStreamBlob(
             nowPlaying.id,
           );
@@ -212,6 +175,8 @@ export function usePlayerEngine([
           const blob = new Blob([buffer], { type: contentType });
           const blobUrl = URL.createObjectURL(blob);
 
+          // Revoke the PREVIOUS track's blob URL now that we're switching off it.
+          // (Not the one we just created — that one needs to stay alive while it plays.)
           if (currentBlobUrlRef.current)
             URL.revokeObjectURL(currentBlobUrlRef.current);
           currentBlobUrlRef.current = blobUrl;
@@ -223,26 +188,27 @@ export function usePlayerEngine([
           if (audioContextRef.current?.state === 'suspended') {
             await audioContextRef.current.resume();
           }
-        } else {
-          const url = await window.subsonic.getStreamUrl(nowPlaying.id);
-          if (cancelled) return;
-          audio.src = url;
-          audio.currentTime = 0;
-        }
 
-        await audio.play();
-      } catch (err) {
-        if (!cancelled) {
-          dispatch({
-            ui: {
-              errorMessage: `Couldn't play "${nowPlaying.title}": ${
-                err instanceof Error ? err.message : String(err)
-              }`,
-            },
-          });
+          await audio.play();
+        } catch (err) {
+          if (!cancelled) {
+            dispatch({
+              ui: {
+                errorMessage: `Couldn't play "${nowPlaying.title}": ${
+                  err instanceof Error ? err.message : String(err)
+                }`,
+              },
+            });
+          }
+        } finally {
+          if (!cancelled) setIsBuffering(false);
         }
-      } finally {
-        if (!cancelled) setIsBuffering(false);
+      } else {
+        analyserRef.current?.disconnect();
+        const url = await window.subsonic.getStreamUrl(nowPlaying.id);
+        audio.src = url;
+        audio.currentTime = 0;
+        await audio.play();
       }
     })();
 
@@ -251,7 +217,7 @@ export function usePlayerEngine([
     };
     // Only re-run when the *track itself* changes, not on every nowPlaying object identity change
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nowPlaying?.id, globalState.config.preCacheSongs, audioElementKey]);
+  }, [nowPlaying?.id, globalState.config.preCacheSongs]);
 
   // Whenever the cover art reference changes: resolve an authenticated art URL.
   // `coverArt` is Subsonic's own art-reference id and is usually distinct from the song id.
@@ -275,7 +241,6 @@ export function usePlayerEngine([
 
   // Keep globalState.player.progress in sync with the real <audio> element,
   // and track play/pause/duration locally (no need to push those into global state).
-  // Re-attaches whenever audioElementKey changes, since that's a brand new element.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -303,7 +268,7 @@ export function usePlayerEngine([
       audio.removeEventListener('pause', onPause);
       audio.removeEventListener('ended', onEnded);
     };
-  }, [dispatch, audioElementKey]);
+  }, [dispatch]);
 
   const play = useCallback(
     (song: Child) => dispatch({ player: { nowPlaying: song, progress: 0 } }),
@@ -391,7 +356,6 @@ export function usePlayerEngine([
 
   return {
     audioRef,
-    audioElementKey,
     albumArtUrl,
     isPlaying,
     isBuffering,
