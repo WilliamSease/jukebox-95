@@ -43,12 +43,6 @@ export interface UsePlayerEngineResult {
   volume: number;
   /** Clamped to 0–1, applied to the <audio> element immediately, and persisted to settings */
   setVolume: (level: number) => void;
-  /**
-   * Web Audio analyser tapped off the current track, for a spectrum visualizer.
-   * Null until the first track plays (created lazily on first play). Pass
-   * straight to <AudioVisualizer analyserRef={...} />.
-   */
-  analyserRef: React.RefObject<AnalyserNode | null>;
 }
 
 /** Formats seconds as "m:ss" for transport bar display, e.g. 275 -> "4:35" */
@@ -69,7 +63,7 @@ export function usePlayerEngine([
   globalState,
   dispatch,
 ]: GlobalReducer): UsePlayerEngineResult {
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [albumArtUrl, setAlbumArtUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -111,31 +105,6 @@ export function usePlayerEngine([
     if (last !== nowPlaying.id) historyRef.current.push(nowPlaying.id);
   }, [nowPlaying?.id]);
 
-  // Lazily-created Web Audio graph, tapped for the visualizer. Created on first
-  // play (not on mount) so context creation happens inside a real user-gesture
-  // chain, per browser autoplay policy. IMPORTANT: once createMediaElementSource
-  // is called, ALL of the audio element's output routes through this graph —
-  // source MUST connect through to ctx.destination or playback goes silent.
-  const audioContextRef = useRef<AudioContext | null>(null);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-
-  const ensureAudioGraph = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio || analyserRef.current) return analyserRef.current;
-
-    const ctx = new AudioContext();
-    const source = ctx.createMediaElementSource(audio);
-    const analyser = ctx.createAnalyser();
-    analyser.fftSize = 64; // 32 frequency bins — chunky, Winamp-scale bars
-
-    source.connect(analyser);
-    analyser.connect(ctx.destination);
-
-    audioContextRef.current = ctx;
-    analyserRef.current = analyser;
-    return analyser;
-  }, []);
-
   // Whenever nowPlaying changes to a different track: fetch the stream URL and play it.
   useEffect(() => {
     const audio = audioRef.current;
@@ -149,12 +118,6 @@ export function usePlayerEngine([
         if (cancelled) return;
         audio.src = url;
         audio.currentTime = 0;
-
-        ensureAudioGraph();
-        if (audioContextRef.current?.state === 'suspended') {
-          await audioContextRef.current.resume();
-        }
-
         await audio.play();
       } catch (err) {
         if (!cancelled) {
@@ -338,6 +301,5 @@ export function usePlayerEngine([
     toggleShuffle,
     volume,
     setVolume,
-    analyserRef,
   };
 }
