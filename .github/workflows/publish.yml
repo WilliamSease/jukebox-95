@@ -1,9 +1,20 @@
+name: Publish
+
+on:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   publish:
 
     # uncomment this to turn publishing off
-    #if: ${{ github.repository_owner == 'electron-react-boilerplate' }} test
-    
+    #if: ${{ github.repository_owner == 'electron-react-boilerplate' }}
+
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
