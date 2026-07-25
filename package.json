@@ -217,7 +217,7 @@
     ],
     "publish": {
       "provider": "github",
-      "owner": "subsonic-player-95",
+      "owner": "williamsease",
       "repo": "subsonic-player-95"
     }
   },
