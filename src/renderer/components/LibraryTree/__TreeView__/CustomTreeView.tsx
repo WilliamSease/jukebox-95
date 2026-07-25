@@ -1,12 +1,9 @@
 import React, { forwardRef, useCallback } from 'react';
 import styled, { css } from 'styled-components';
 
-import useControlledOrUncontrolled from '../../../../React95/src/common/hooks/useControlledOrUncontrolled';
-import {
-  LabelText,
-  StyledLabel,
-} from '../../../../React95/src/common/SwitchBase';
-import { CommonStyledProps } from '../../../../React95/src/types';
+import useControlledOrUncontrolled from 'react95/dist/common/hooks/useControlledOrUncontrolled';
+import { LabelText, StyledLabel } from 'react95/dist/common/SwitchBase';
+import { CommonStyledProps } from 'react95/dist/types';
 
 type TreeLeaf<T> = {
   disabled?: boolean;
