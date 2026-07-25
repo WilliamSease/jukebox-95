@@ -38,7 +38,7 @@ jobs:
           GITHUB_WORKSPACE: 'williamsease/subsonic-player-95/'
         with:
           version-type: 'patch'
-          PACKAGEJSON_DIR: '/release/app'
+          PACKAGEJSON_DIR: 'release/app'
 
       - name: Install Node and NPM
         uses: actions/setup-node@v3
