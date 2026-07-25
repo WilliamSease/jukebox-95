@@ -8,6 +8,7 @@ import { isNil } from 'lodash';
 import { GlobalReducer } from '../hooks/useGlobalState';
 import type { Child } from 'subsonic-api' with { 'resolution-mode': 'import' };
 import { formatTime, UsePlayerEngineResult } from '../hooks/usePlayerEngine';
+import { VolumeSlider } from './VolumeSlider';
 
 export function PlayerList(props: {
   global: GlobalReducer;
@@ -206,19 +207,9 @@ export function PlayerList(props: {
         </Button>
         <Button
           onClick={() => {
-            player.previous();
-            /**if ((player.progress ?? 0) < 5000) {
-              let currentItemIndex = state.player.tracksInPlayer.findIndex(
-                (playable) => playable.id === playbackState?.item?.id,
-              );
-              let notBelowZero =
-                currentItemIndex - 1 < 0 ? 0 : currentItemIndex - 1;
-              spotify.play({
-                uris: tracksInPlayer
-                  .slice(notBelowZero, tracksInPlayer.length)
-                  .map((playable) => playable.uri),
-              });
-            } else spotify.seek(0); **/
+            if (player.progress < 5) {
+              player.previous();
+            } else player.seek(0);
           }}
           className="toolbarButton"
         >
@@ -280,6 +271,8 @@ export function PlayerList(props: {
         <span style={{ marginLeft: '.5rem', marginRight: '.5rem' }}>
           {formatTime(player.progress)} / {formatTime(player.duration)}
         </span>
+        <span style={{ flexGrow: 1 }}></span>
+        <VolumeSlider player={player} />
       </Toolbar>
     </FlexColumn>
   );

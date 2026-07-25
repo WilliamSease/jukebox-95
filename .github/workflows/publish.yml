@@ -13,7 +13,7 @@ jobs:
   publish:
 
     # uncomment this to turn publishing off
-    #if: ${{ github.repository_owner == 'electron-react-boilerplate' }}
+    if: ${{ github.repository_owner == 'electron-react-boilerplate' }}
 
     runs-on: ${{ matrix.os }}
     strategy:

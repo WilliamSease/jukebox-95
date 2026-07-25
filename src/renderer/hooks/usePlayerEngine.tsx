@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import type { Child } from 'subsonic-api' with { 'resolution-mode': 'import' };
+import type { Child, SubsonicAPI as SubsonicAPIType } from 'subsonic-api' with {
+  'resolution-mode': 'import',
+};
 import type { GlobalReducer } from './useGlobalState';
 
 export interface UsePlayerEngineResult {
@@ -37,6 +39,10 @@ export interface UsePlayerEngineResult {
   /** When true, next() picks a random remaining track instead of the next sequential one */
   shuffle: boolean;
   toggleShuffle: () => void;
+  /** 0–1 */
+  volume: number;
+  /** Clamped to 0–1, applied to the <audio> element immediately, and persisted to settings */
+  setVolume: (level: number) => void;
 }
 
 /** Formats seconds as "m:ss" for transport bar display, e.g. 275 -> "4:35" */
@@ -63,6 +69,24 @@ export function usePlayerEngine([
   const [duration, setDuration] = useState(0);
   const [repeat, setRepeat] = useState(false);
   const [shuffle, setShuffle] = useState(false);
+  const [volume, setVolume] = useState(1);
+
+  // Hydrate saved volume once on mount (falls back to 1 if nothing saved yet)
+  useEffect(() => {
+    window.settings.get<number>('volume').then((saved) => {
+      if (typeof saved === 'number') setVolume(saved);
+    });
+  }, []);
+
+  useEffect(() => {
+    window.settings.set('volume', volume);
+  }, [volume]);
+
+  // Keep the actual <audio> element's volume in sync, including right after
+  // a new src is assigned (some browsers can reset volume on src changes)
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = volume;
+  }, [volume]);
 
   const { nowPlaying, tracksInPlayer, progress } = globalState.player;
 
@@ -275,5 +299,7 @@ export function usePlayerEngine([
     toggleRepeat,
     shuffle,
     toggleShuffle,
+    volume,
+    setVolume,
   };
 }

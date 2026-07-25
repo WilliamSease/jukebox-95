@@ -3,8 +3,9 @@ import * as Themes from 'react95/dist/themes';
 import { Theme } from 'react95/dist/types';
 import Label from '../sdk/Label';
 import { FlexWindowModal } from '../sdk/FlexWindowModal';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { GlobalReducer } from '../hooks/useGlobalState';
+import { isNil } from 'lodash';
 
 const ThemesArray = Object.entries(Themes.default);
 
@@ -23,7 +24,21 @@ export const SettingsDialog = (props: IProps) => {
     } else {
       setThemeMemory(undefined);
     }
-  }, [state, setThemeMemory]);
+  }, [state.windowOpen.settings, setThemeMemory]);
+
+  //Hydrate this dialog
+  const hydrate = useCallback(async () => {
+    const theme = await window.settings.get<string>('theme');
+    const matchingTheme = ThemesArray.find(([itm]) => itm === theme);
+    !isNil(theme) && !isNil(matchingTheme) && !isNil(matchingTheme[1]);
+    theme !== 'system' &&
+      dispatch({
+        config: { theme: matchingTheme![1] },
+      });
+  }, []);
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
 
   return (
     <FlexWindowModal
@@ -33,7 +48,13 @@ export const SettingsDialog = (props: IProps) => {
       height={600}
       width={500}
       bottomButtons={[
-        { text: 'save', onPress: () => {}, closesWindow: true },
+        {
+          text: 'save',
+          onPress: () => {
+            window.settings.set('theme', state.config.theme.name);
+          },
+          closesWindow: true,
+        },
         {
           text: 'cancel',
           onPress: () => {

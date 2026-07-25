@@ -119,8 +119,12 @@ export default function App() {
             ]}
           />
           <MenuButtonWithDropDown
-            buttonText="About"
+            buttonText="Help"
             menuOptions={[
+              {
+                text: 'Help',
+                onClick: () => dispatch({ windowOpen: { help: true } }),
+              },
               {
                 text: 'About',
                 onClick: () => dispatch({ windowOpen: { about: true } }),
@@ -131,24 +135,15 @@ export default function App() {
               },
             ]}
           />
-          <Button
-            variant="thin"
-            onClick={() => dispatch({ windowOpen: { focus: true } })}
-          >
-            Focus
-          </Button>
-          <Button
-            variant="thin"
-            onClick={() => dispatch({ windowOpen: { help: true } })}
-          >
-            Help
-          </Button>
-          <Button
-            variant="thin"
-            onClick={() => dispatch({ windowOpen: { contact: true } })}
-          >
-            Contact
-          </Button>
+          <MenuButtonWithDropDown
+            buttonText="Extra"
+            menuOptions={[
+              {
+                text: 'Focus mode...',
+                onClick: () => dispatch({ windowOpen: { focus: true } }),
+              },
+            ]}
+          />
           <span style={{ flexGrow: 1 }} />
         </Toolbar>
         <Separator />
@@ -262,7 +257,6 @@ export default function App() {
               >
                 ↔️
               </Button>
-              <VolumeSlider />
             </Toolbar>
             <PlayerList global={global} player={player} />
           </div>

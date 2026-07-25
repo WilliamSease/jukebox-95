@@ -10,7 +10,7 @@ interface SubsonicCreds {
 interface AppSettings {
   remember: boolean;
   subsonic: SubsonicCreds | null;
-  theme: 'light' | 'dark' | 'system';
+  theme: string | null;
   windowBounds: { width: number; height: number; x?: number; y?: number } | null;
   lastFolderId: string | null;
   volume: number;
@@ -19,7 +19,7 @@ interface AppSettings {
 const defaults: AppSettings = {
   remember: false,
   subsonic: null,
-  theme: 'system',
+  theme: null,
   windowBounds: null,
   lastFolderId: null,
   volume: 0.8,
