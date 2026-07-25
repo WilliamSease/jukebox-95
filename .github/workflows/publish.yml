@@ -13,7 +13,7 @@ jobs:
   publish:
 
     # comment this to turn publishing on  
-    #if: ${{ github.repository_owner == 'electron-react-boilerplate' }}
+    #if: ${{ github.repository_owner == 'electron-react-boilerplate' }} test
 
     runs-on: ${{ matrix.os }}
 
