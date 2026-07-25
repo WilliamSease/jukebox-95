@@ -88,4 +88,4 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          gh release edit "v$VERSION" --draft=false --repo WilliamSease/subsonic-player-95
+          gh release edit "$VERSION" --draft=false --repo WilliamSease/subsonic-player-95
