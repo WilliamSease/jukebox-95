@@ -30,6 +30,7 @@ import { FocusModeDialog } from './dialogs/FocusModeDialog';
 import { HelpDialog } from './dialogs/HelpDialog';
 import { ContactDialog } from './dialogs/ContactDialog';
 import useGlobalState from './hooks/useGlobalState';
+import { usePlayerEngine } from './hooks/usePlayerEngine';
 
 const GlobalStyles = createGlobalStyle`
   ${styleReset}
@@ -58,13 +59,14 @@ const GlobalStyles = createGlobalStyle`
 export default function App() {
   const global = useGlobalState();
   const [state, dispatch] = global;
-  const [tokenButtonHover, setTokenButtonHover] = useState(false);
-
-  useClock({ effect: async () => {}, delay: 100 });
+  const player = usePlayerEngine(global);
 
   return (
     <ThemeProvider theme={state.config.theme}>
       <GlobalStyles />
+      {/* hidden — this is the actual audio element being driven */}
+      <audio ref={player.audioRef} style={{ display: 'none' }} />
+
       <Window
         style={{
           width: '100%',
@@ -83,7 +85,7 @@ export default function App() {
         <AuthDialog global={global} />
         <NetworkGraphDialog global={global} />
         <ErrorDialog global={global} />
-        <FocusModeDialog global={global} />
+        <FocusModeDialog global={global} player={player} />
         <WindowHeader
           title="Subsonic95"
           className="window-title dragApplication"
@@ -187,20 +189,26 @@ export default function App() {
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
                     }}
-                  >
-                    {'PLACEHOLDER'}
-                  </div>
+                  ></div>
 
                   <Button
                     className="toolbarButton clickableUnderDraggable"
                     onClick={() =>
-                      dispatch({ ui: { showAlbumArt: !state.ui.showAlbumArt } })
+                      dispatch({
+                        ui: { showAlbumArt: !state.ui.showAlbumArt },
+                      })
                     }
                   >
                     ✕
                   </Button>
                 </WindowHeader>
-                <img style={{ height: 365, width: 365 }} />
+                {!isNil(player.albumArtUrl) && (
+                  <img
+                    style={{ height: 365, width: 365 }}
+                    src={player.albumArtUrl ?? undefined}
+                    alt="album art"
+                  />
+                )}
               </Window>
             )}
             {!state.ui.showAlbumArt && !state.ui.leftPanelBigger && (
@@ -241,26 +249,22 @@ export default function App() {
                 👉
               </Button>
               <span style={{ flexGrow: 1 }}></span>
+              {state.ui.showTracksIndividually ? `Individual` : `Group`}
               <Button
                 style={{ marginLeft: '.5rem' }}
                 onClick={() =>
                   dispatch({
                     ui: {
-                      playerView:
-                        state.ui.playerView === 'group'
-                          ? 'individual'
-                          : 'group',
+                      showTracksIndividually: !state.ui.showTracksIndividually,
                     },
                   })
                 }
               >
-                {state.ui.playerView === 'individual'
-                  ? `Individual Tracks`
-                  : `Group Tracks By Artist/Album`}
+                ↔️
               </Button>
               <VolumeSlider />
             </Toolbar>
-            <PlayerList global={global} />
+            <PlayerList global={global} player={player} />
           </div>
         </div>
       </Window>

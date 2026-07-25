@@ -1,8 +1,13 @@
 import { ipcMain } from 'electron';
-import { initSubsonic, getApi, resetSubsonic, SubsonicCredentials } from './subsonic';
+import {
+  initSubsonic,
+  resetSubsonic,
+  getApi,
+  getStreamUrl,
+  getCoverArtUrl,
+  SubsonicCredentials,
+} from './subsonic';
 
-// Whitelist of SubsonicApi methods the renderer is allowed to call.
-// Add to this as you use more of the API surface.
 const ALLOWED_METHODS = new Set([
   'getArtists',
   'getArtist',
@@ -19,7 +24,6 @@ const ALLOWED_METHODS = new Set([
   'unstar',
   'getStarred2',
   'scrobble',
-  'search2'
 ]);
 
 export function registerSubsonicHandlers() {
@@ -42,13 +46,14 @@ export function registerSubsonicHandlers() {
     return api[method](args);
   });
 
-  // Cover art and stream are special: they're not really "call, get JSON back"
-  // — they're media URLs. Build the authenticated URL in main and hand it back.
-  ipcMain.handle('subsonic:getCoverArt', (_event, id: string, size?: number) => {
-    return getApi().getCoverArt({ id, size });
+  // FIXED: these no longer call nonexistent api.getStreamUrl/getCoverArtUrl —
+  // they call the URL-building functions in subsonic.ts, which are synchronous
+  // and don't touch the network at all (they just construct an authenticated URL).
+  ipcMain.handle('subsonic:getCoverArtUrl', (_event, id: string, size?: number) => {
+    return getCoverArtUrl(id, size);
   });
 
-  ipcMain.handle('subsonic:stream', (_event, id: string) => {
-    return getApi().stream({ id });
+  ipcMain.handle('subsonic:getStreamUrl', (_event, id: string) => {
+    return getStreamUrl(id);
   });
 }

@@ -28,6 +28,7 @@ type TreeViewProps<T> = {
     expandedIds: T[],
   ) => void;
   selected?: T;
+  getKey: (toGetKey: T) => string;
   style?: React.CSSProperties;
   tree: TreeLeaf<T>[];
 } & CommonStyledProps;
@@ -41,6 +42,7 @@ type TreeBranchProps<T> = {
   onSelect: (event: React.MouseEvent<HTMLElement>, id: T) => void;
   onToggle: (event: React.MouseEvent<HTMLElement>, id: T) => void;
   selected: T | undefined;
+  getKey: (toGetKey: T) => string;
   style: React.CSSProperties | undefined;
   tree: TreeLeaf<T>[];
 } & CommonStyledProps;
@@ -231,6 +233,7 @@ function TreeBranch<T>({
   onToggle,
   selected,
   style,
+  getKey,
   tree = [],
 }: TreeBranchProps<T>) {
   const isRootLevel = level === 0;
@@ -263,7 +266,7 @@ function TreeBranch<T>({
 
         return (
           <TreeItem
-            key={String(item.id)}
+            key={getKey(item.id)}
             isRootLevel={isRootLevel}
             role="treeitem"
             aria-expanded={hasItems ? isExpanded : undefined}
@@ -303,6 +306,7 @@ function TreeBranch<T>({
                 onSelect={onSelect}
                 onToggle={onToggle}
                 selected={selected}
+                getKey={getKey}
                 style={style}
                 tree={item.items ?? []}
               />
@@ -323,6 +327,7 @@ function TreeInner<T>(
     expanded,
     onNodeSelect,
     onNodeToggle,
+    getKey,
     selected,
     style,
     tree = [],
@@ -378,6 +383,7 @@ function TreeInner<T>(
       innerRef={ref}
       onSelect={handleSelect}
       onToggle={handleToggle}
+      getKey={getKey}
       selected={selectedInternal}
       style={style}
       tree={tree}
@@ -385,12 +391,9 @@ function TreeInner<T>(
   );
 }
 
-/* eslint-disable no-use-before-define */
 const TreeView = forwardRef(TreeInner) as <T>(
-  // eslint-disable-next-line no-use-before-define
   props: TreeViewProps<T> & { ref?: React.ForwardedRef<HTMLUListElement> },
 ) => ReturnType<typeof TreeInner<T>>;
-/* eslint-enable no-use-before-define */
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore

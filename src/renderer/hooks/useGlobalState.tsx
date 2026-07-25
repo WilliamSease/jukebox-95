@@ -16,7 +16,7 @@ export interface GlobalState {
     theme: Theme;
   };
   ui: {
-    playerView: 'individual' | 'group';
+    showTracksIndividually: boolean;
     showAlbumArt: boolean;
     errorMessage: string | null;
     leftPanelBigger: boolean;
@@ -41,8 +41,8 @@ const initialConfiguration: GlobalState = {
   apiReady: false,
   config: { theme: original },
   ui: {
-    playerView: 'individual',
-    showAlbumArt: false,
+    showTracksIndividually: false,
+    showAlbumArt: true,
     errorMessage: null,
     leftPanelBigger: false,
   },
@@ -62,7 +62,7 @@ const initialConfiguration: GlobalState = {
   },
 };
 
-export function useConfiguration(
+export function useGlobalState(
   overrides?: DeepPartial<GlobalState>,
 ): GlobalReducer {
   const [configuration, setConfiguration] = useState<GlobalState>(() =>
@@ -78,4 +78,4 @@ export function useConfiguration(
   return [configuration, dispatch];
 }
 
-export default useConfiguration;
+export default useGlobalState;

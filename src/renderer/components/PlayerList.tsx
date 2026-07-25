@@ -1,6 +1,5 @@
 import { Button, Frame, ScrollView, Slider, Toolbar } from 'react95';
 
-import { formatMs } from '../functions/formatFunctions';
 import { AlternateGrey } from '../sdk/ThemedComponents';
 import { FlexColumn } from '../sdk/FlexElements';
 import { useCallback, useState } from 'react';
@@ -8,13 +7,21 @@ import Label from '../sdk/Label';
 import { isNil } from 'lodash';
 import { GlobalReducer } from '../hooks/useGlobalState';
 import type { Child } from 'subsonic-api' with { 'resolution-mode': 'import' };
+import { formatTime, UsePlayerEngineResult } from '../hooks/usePlayerEngine';
 
-export function PlayerList(props: { global: GlobalReducer }) {
-  const [state, dispatch] = props.global;
+export function PlayerList(props: {
+  global: GlobalReducer;
+  player: UsePlayerEngineResult;
+}) {
+  const { player, global } = props;
+  const [state, dispatch] = global;
 
   const [highlighted, setHighlighted] = useState<number>(0);
   const compileTrackInfo = useCallback(
-    (item: Child) => [`${item.albumArtists?.join(' ,')}`, `${item.album}`],
+    (item: Child) => [
+      `${item.albumArtists?.map((artist) => artist.name)?.join(' ,')}`,
+      `${item.album}`,
+    ],
     [],
   );
 
@@ -22,6 +29,7 @@ export function PlayerList(props: { global: GlobalReducer }) {
     <FlexColumn style={{ flexGrow: 1 }}>
       <Frame variant="field" style={{ flexGrow: 1 }}>
         <ScrollView
+          key={'scrollView'}
           style={{
             height: '100%',
             width: '100%',
@@ -33,17 +41,20 @@ export function PlayerList(props: { global: GlobalReducer }) {
             const compiledTrackInfo = compileTrackInfo(itm);
             const playThisTrack = () => {
               if (i === highlighted) {
-                //play these
+                dispatch({
+                  player: { nowPlaying: state.player.tracksInPlayer[i] },
+                });
               }
               setHighlighted(i);
             };
             return (
               <>
-                {state.ui.playerView === 'individual' && (
+                {state.ui.showTracksIndividually && (
                   <AlternateGrey
                     index={i}
                     isSelected={i === highlighted}
                     onClick={playThisTrack}
+                    key={i + 'track'}
                   >
                     <div
                       style={{
@@ -52,7 +63,7 @@ export function PlayerList(props: { global: GlobalReducer }) {
                       }}
                     >
                       <div style={{ width: '3rem' }}>
-                        {formatMs(itm.duration ?? 0)}
+                        {formatTime(itm.duration ?? 0)}
                       </div>
                       <div style={{ width: '2rem' }}>{'🎵'}</div>
                       <div style={{ width: '25rem' }}>{itm.title}</div>
@@ -74,13 +85,13 @@ export function PlayerList(props: { global: GlobalReducer }) {
                     </div>
                   </AlternateGrey>
                 )}
-                {state.ui.playerView === 'group' && (
+                {!state.ui.showTracksIndividually && (
                   <>
                     {(i === 0 ||
                       JSON.stringify(
                         compileTrackInfo(state.player.tracksInPlayer[i - 1]),
                       ) !== JSON.stringify(compileTrackInfo(itm))) && (
-                      <div>
+                      <div key={i + 'label'}>
                         <Label>{`${compiledTrackInfo[0]} ${`/ ${compiledTrackInfo[1]}`}`}</Label>
                       </div>
                     )}
@@ -93,9 +104,10 @@ export function PlayerList(props: { global: GlobalReducer }) {
                         marginLeft: '2rem',
                       }}
                       onClick={playThisTrack}
+                      key={i + 'track'}
                     >
                       <div style={{ width: '3rem' }}>
-                        {formatMs(itm.duration ?? 0)}
+                        {formatTime(itm.duration ?? 0)}
                       </div>
                       <div style={{ width: '2rem' }}>{'🎵'}</div>
                       <div style={{ width: '43rem' }}>{itm.title}</div>
@@ -135,7 +147,7 @@ export function PlayerList(props: { global: GlobalReducer }) {
         )}
       </Toolbar>
       <Slider
-        size={800}
+        size={state.ui.leftPanelBigger ? 350 : 800}
         value={
           ((state.player?.progress ?? 0) /
             (state.player.nowPlaying?.duration ?? 0)) *
@@ -144,7 +156,7 @@ export function PlayerList(props: { global: GlobalReducer }) {
         style={{ marginLeft: '1.4rem', marginBottom: '0' }}
         orientation="horizontal"
         onChangeCommitted={(value) => {
-          ((seek: number) => {})(
+          player.seek(
             Math.floor(
               ((state.player.nowPlaying?.duration ?? 0) / 100) * value,
             ),
@@ -152,34 +164,29 @@ export function PlayerList(props: { global: GlobalReducer }) {
         }}
       />
       <Toolbar style={{ marginLeft: '1rem' }}>
-        {/**<Button
+        <Button
           onClick={() => {
-            if (!checkActionable()) return;
-            if (!playbackState?.is_playing) spotify.play();
+            !isNil(state.player.nowPlaying) && player.resume();
           }}
-          disabled={playbackState?.is_playing}
+          disabled={player.isPlaying || isNil(state.player.nowPlaying)}
           className="toolbarButton"
         >
           ⏵
         </Button>
         <Button
-          disabled={!playbackState?.is_playing}
+          disabled={!player.isPlaying}
           onClick={() => {
-            if (!checkActionable()) return;
-
-            if (playbackState?.is_playing) spotify.pause();
+            if (player.isPlaying) player.pause();
           }}
           className="toolbarButton"
         >
           ⏸
         </Button>
         <Button
-          disabled={!playbackState?.is_playing}
+          disabled={!player.isPlaying}
           onClick={() => {
-            if (!checkActionable()) return;
-
-            if (playbackState?.is_playing) spotify.pause();
-            spotify.seek(0);
+            if (player.isPlaying) player.pause();
+            player.seek(0);
           }}
           className="toolbarButton"
         >
@@ -187,11 +194,11 @@ export function PlayerList(props: { global: GlobalReducer }) {
         </Button>
         <Button
           onClick={() => {
-            if (!checkActionable()) return;
-
-            if (playbackState?.is_playing) spotify.pause();
-            spotify.seek(0);
-            dispatch(setToPlayer([]));
+            if (player.isPlaying) player.pause();
+            player.seek(0);
+            dispatch({
+              player: { nowPlaying: null, tracksInPlayer: [] },
+            });
           }}
           className="toolbarButton"
         >
@@ -199,10 +206,9 @@ export function PlayerList(props: { global: GlobalReducer }) {
         </Button>
         <Button
           onClick={() => {
-            if (!checkActionable()) return;
-
-            if ((playbackState?.progress_ms ?? 0) < 5000) {
-              let currentItemIndex = tracksInPlayer.findIndex(
+            player.previous();
+            /**if ((player.progress ?? 0) < 5000) {
+              let currentItemIndex = state.player.tracksInPlayer.findIndex(
                 (playable) => playable.id === playbackState?.item?.id,
               );
               let notBelowZero =
@@ -212,7 +218,7 @@ export function PlayerList(props: { global: GlobalReducer }) {
                   .slice(notBelowZero, tracksInPlayer.length)
                   .map((playable) => playable.uri),
               });
-            } else spotify.seek(0);
+            } else spotify.seek(0); **/
           }}
           className="toolbarButton"
         >
@@ -220,23 +226,16 @@ export function PlayerList(props: { global: GlobalReducer }) {
         </Button>
         <Button
           onClick={() => {
-            if (!checkActionable()) return;
-
-            spotify.skipToNext();
+            player.next();
           }}
           className="toolbarButton"
         >
           ⏭
         </Button>
         <Button
-          variant={playbackState?.repeat_state === 'track' ? 'flat' : 'default'}
+          variant={true ? 'flat' : 'default'}
           onClick={() => {
-            {
-              if (!checkActionable()) return;
-              spotify.setRepeat(
-                playbackState?.repeat_state === 'off' ? 'track' : 'off',
-              );
-            }
+            //todo
           }}
           className="toolbarButton"
         >
@@ -244,20 +243,19 @@ export function PlayerList(props: { global: GlobalReducer }) {
         </Button>
         <Button
           onClick={() => {
-            if (!checkActionable()) return;
-            spotify.setShuffle(!playbackState?.shuffle_state);
+            //todo
           }}
-          variant={playbackState?.shuffle_state ? 'flat' : 'default'}
+          variant={true ? 'flat' : 'default'}
           className="toolbarButton"
         >
           Shuffle
         </Button>
         <Button
-          disabled={!playbackState?.is_playing}
+          disabled={!player.isPlaying}
           onClick={() => {
-            if (playbackState?.is_playing) {
-              const seek = (playbackState?.progress_ms ?? 15000) - 15000;
-              spotify.seek(seek >= 0 ? seek : 0);
+            if (player.isPlaying) {
+              const seek = (player.progress ?? 15) - 15;
+              player.seek(seek >= 0 ? seek : 0);
             }
           }}
           className="toolbarButton"
@@ -265,14 +263,14 @@ export function PlayerList(props: { global: GlobalReducer }) {
           ⏴ 15s
         </Button>
         <Button
-          disabled={!playbackState?.is_playing}
+          disabled={!player.isPlaying}
           onClick={() => {
-            if (playbackState?.is_playing) {
-              let seek = (playbackState?.progress_ms ?? 0) + 15000;
-              if (seek > (nowPlaying?.duration_ms ?? 0)) {
-                seek = nowPlaying?.duration_ms ?? 0;
+            if (player.isPlaying) {
+              let seek = player.progress + 15;
+              if (seek > (player.duration ?? 0)) {
+                seek = player.duration ?? 0;
               }
-              spotify.seek(seek);
+              player.seek(seek);
             }
           }}
           className="toolbarButton"
@@ -280,9 +278,8 @@ export function PlayerList(props: { global: GlobalReducer }) {
           15s ⏵
         </Button>
         <span style={{ marginLeft: '.5rem', marginRight: '.5rem' }}>
-          {formatMs(playbackState?.progress_ms ?? 0)} /{' '}
-          {formatMs(nowPlaying?.duration_ms ?? 0)}
-        </span>**/}
+          {formatTime(player.progress)} / {formatTime(player.duration)}
+        </span>
       </Toolbar>
     </FlexColumn>
   );

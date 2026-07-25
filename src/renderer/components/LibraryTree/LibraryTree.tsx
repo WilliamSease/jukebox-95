@@ -74,6 +74,7 @@ export const LibraryTree = (props: { global: GlobalReducer }) => {
             ) : (
               !isNil(tree) && (
                 <TreeView<Folder>
+                  getKey={(toGet) => toGet.path}
                   defaultExpanded={[tree.id]}
                   tree={[tree]}
                   onNodeSelect={(id, folder) => {

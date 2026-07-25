@@ -1,26 +1,24 @@
 import { isNil } from 'lodash';
 import { useCallback, useMemo, useState } from 'react';
 import { Button, TextInput, Toolbar } from 'react95';
-import { formatMs } from '../functions/formatFunctions';
 import { FlexColumn, FlexRow } from '../sdk/FlexElements';
 import { FlexWindowModal } from '../sdk/FlexWindowModal';
 import Label from '../sdk/Label';
 import { GlobalReducer } from '../hooks/useGlobalState';
+import { formatTime, UsePlayerEngineResult } from '../hooks/usePlayerEngine';
 
 type IProps = {
   global: GlobalReducer;
+  player: UsePlayerEngineResult;
 };
 export const FocusModeDialog = (props: IProps) => {
-  const [state, dispatch] = props.global;
-
-  const nowPlaying = {};
-  const playbackState = {};
-  const nowPlayingImage = {};
+  const { global, player } = props;
+  const [state, dispatch] = global;
 
   const [captcha, setCaptcha] = useState<string | null>(null);
   const [captchaInput, setCaptchaInput] = useState('');
   const nextCaptcha = useCallback(() => {
-    //no i j k I J K
+    //no i j k l I J K L
     const characters = 'ABCDEFGHKMNOPQRSTUVWXYZabcdefghkmnopqrstuvwxyz';
     let result = '';
     for (let i = 0; i < 5; i++) {
@@ -43,35 +41,40 @@ export const FocusModeDialog = (props: IProps) => {
       screenSaverBackground
       provideCloseButton
     >
-      {isNil(captcha) ? (
-        <FlexColumn style={{ justifyContent: 'center', flexGrow: 1 }}>
-          {!isNil(nowPlaying) && !isNil(nowPlayingImage) ? (
-            <>
-              <FlexRow style={{ justifyContent: 'center' }}>
-                <img style={{ height: 365, width: 365 }} src={''} />
-              </FlexRow>
-              <FlexRow style={{ justifyContent: 'center' }}>
-                <Label>{'TRACKPLACEHOLDER'}</Label>
-              </FlexRow>
-              <FlexRow style={{ justifyContent: 'center' }}>
-                <Label>{'ALBUMPLACEHOLDER'}</Label>
-              </FlexRow>
-              <FlexRow style={{ justifyContent: 'center' }}>
-                <Label>{'TRACKPLACEHOLDER'}</Label>
-              </FlexRow>
-              <FlexRow style={{ justifyContent: 'center' }}>
-                {formatMs(0)}
-                {' / '}
-                {formatMs(0)}
-              </FlexRow>
-            </>
-          ) : (
+      <FlexColumn style={{ justifyContent: 'center', flexGrow: 1 }}>
+        {!isNil(state.player.nowPlaying) && !isNil(player?.albumArtUrl) ? (
+          <>
             <FlexRow style={{ justifyContent: 'center' }}>
-              <div>Nothing playing</div>
+              <img
+                style={{ height: 365, width: 365 }}
+                src={player.albumArtUrl}
+              />
             </FlexRow>
-          )}
-        </FlexColumn>
-      ) : (
+            <FlexRow style={{ justifyContent: 'center' }}>
+              <Label
+                children={state.player.nowPlaying.displayAlbumArtist ?? ''}
+              />
+            </FlexRow>
+            <FlexRow style={{ justifyContent: 'center' }}>
+              <Label children={state.player.nowPlaying.album ?? ''} />{' '}
+            </FlexRow>
+            <FlexRow style={{ justifyContent: 'center' }}>
+              <Label children={state.player.nowPlaying.title ?? ''} />{' '}
+            </FlexRow>
+            <FlexRow style={{ justifyContent: 'center' }}>
+              {formatTime(player.progress)}
+              {' / '}
+              {formatTime(player.duration)}
+            </FlexRow>
+          </>
+        ) : (
+          <FlexRow style={{ justifyContent: 'center' }}>
+            <div>Nothing playing</div>
+          </FlexRow>
+        )}
+      </FlexColumn>
+
+      {!isNil(captcha) && (
         <FlexColumn style={{ justifyContent: 'center', flexGrow: 1 }}>
           <FlexRow style={{ justifyContent: 'center' }}>
             <Label>To Break your focus, Enter:</Label>
@@ -86,6 +89,12 @@ export const FocusModeDialog = (props: IProps) => {
             <TextInput
               value={captchaInput}
               onChange={(v) => setCaptchaInput(v.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter')
+                  if (captchaInput === captcha)
+                    dispatch({ windowOpen: { focus: false } });
+                  else nextCaptcha();
+              }}
             />
           </FlexRow>
           <FlexRow style={{ justifyContent: 'center' }}>
