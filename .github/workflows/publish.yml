@@ -19,8 +19,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           with:
-            version-type:  'minor'
-            
+            version-type: 'minor'
+
       - name: Checkout git repo
         uses: actions/checkout@v3
 
