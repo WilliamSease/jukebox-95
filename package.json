@@ -218,7 +218,7 @@
     "publish": {
       "provider": "github",
       "owner": "subsonic-player-95",
-      "repo": "subsonic-player-5"
+      "repo": "subsonic-player-95"
     }
   },
   "devEngines": {
