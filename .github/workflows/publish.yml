@@ -60,6 +60,7 @@ jobs:
           npm run build
 
       - name: Publish releases
+        id: publish-release-id
         env:
           # The APPLE_* values are used for auto updates signing
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_ID_PASS }}
@@ -72,3 +73,9 @@ jobs:
           TAG_NAME: ${{ github.ref_name }}
         run: |
           npm exec electron-builder -- --publish always --win --linux
+
+      - uses: eregon/publish-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          release_id: ${{ steps.publish-release-id.outputs.id }}
