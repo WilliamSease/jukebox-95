@@ -74,8 +74,8 @@ jobs:
         run: |
           npm exec electron-builder -- --publish always --win --linux
 
-      - uses: eregon/publish-release@v1
+      - name: Undraft Release via GH CLI
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          release_id: ${{ steps.publish-release-id.outputs.id }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release edit ${{ github.ref_name }} --draft=false
