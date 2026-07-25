@@ -9,6 +9,7 @@ import { GlobalReducer } from '../hooks/useGlobalState';
 import type { Child } from 'subsonic-api' with { 'resolution-mode': 'import' };
 import { formatTime, UsePlayerEngineResult } from '../hooks/usePlayerEngine';
 import { VolumeSlider } from './VolumeSlider';
+import { AudioVisualizer } from './AudioVisualizer';
 
 export function PlayerList(props: {
   global: GlobalReducer;
@@ -272,6 +273,10 @@ export function PlayerList(props: {
           {formatTime(player.progress)} / {formatTime(player.duration)}
         </span>
         <span style={{ flexGrow: 1 }}></span>
+        {state.config.preCacheSongs && (
+          <AudioVisualizer analyserRef={player.analyserRef} />
+        )}
+        <span style={{ marginLeft: '.5rem' }} />
         <VolumeSlider player={player} />
       </Toolbar>
     </FlexColumn>

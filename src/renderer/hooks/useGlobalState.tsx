@@ -14,6 +14,7 @@ export interface GlobalState {
   apiReady: boolean;
   config: {
     theme: Theme;
+    preCacheSongs: boolean;
   };
   ui: {
     showTracksIndividually: boolean;
@@ -39,7 +40,7 @@ export interface GlobalState {
 
 const initialConfiguration: GlobalState = {
   apiReady: false,
-  config: { theme: original },
+  config: { theme: original, preCacheSongs: false },
   ui: {
     showTracksIndividually: false,
     showAlbumArt: true,

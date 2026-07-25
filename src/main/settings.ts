@@ -11,18 +11,16 @@ interface AppSettings {
   remember: boolean;
   subsonic: SubsonicCreds | null;
   theme: string | null;
-  windowBounds: { width: number; height: number; x?: number; y?: number } | null;
-  lastFolderId: string | null;
   volume: number;
+  preCacheSongs:boolean,
 }
 
 const defaults: AppSettings = {
   remember: false,
   subsonic: null,
   theme: null,
-  windowBounds: null,
-  lastFolderId: null,
   volume: 0.8,
+  preCacheSongs: false
 };
 
 let store: Store<AppSettings> | null = null;

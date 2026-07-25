@@ -1,4 +1,4 @@
-import { GroupBox, Select } from 'react95';
+import { Checkbox, GroupBox, Select } from 'react95';
 import * as Themes from 'react95/dist/themes';
 import { Theme } from 'react95/dist/types';
 import Label from '../sdk/Label';
@@ -35,6 +35,9 @@ export const SettingsDialog = (props: IProps) => {
       dispatch({
         config: { theme: matchingTheme![1] },
       });
+    const preCacheSongs = await window.settings.get<boolean>('preCacheSongs');
+    if (!isNil(preCacheSongs))
+      dispatch({ config: { preCacheSongs: preCacheSongs } });
   }, []);
   useEffect(() => {
     hydrate();
@@ -52,6 +55,7 @@ export const SettingsDialog = (props: IProps) => {
           text: 'save',
           onPress: () => {
             window.settings.set('theme', state.config.theme.name);
+            window.settings.set('preCacheSongs', state.config.preCacheSongs);
           },
           closesWindow: true,
         },
@@ -82,6 +86,19 @@ export const SettingsDialog = (props: IProps) => {
             dispatch({ config: { theme: ThemesArray[e.value][1] } });
           }}
         />
+      </GroupBox>
+      <GroupBox
+        label="playback"
+        style={{ marginTop: '1rem', marginLeft: '1rem', marginRight: '1rem' }}
+      >
+        <Label>Precache song on play:</Label>
+        <Checkbox
+          checked={state.config.preCacheSongs}
+          onClick={(event) =>
+            dispatch({ config: { preCacheSongs: !state.config.preCacheSongs } })
+          }
+        />
+        Causes a little lag on play, but enables a neat visualizer.
       </GroupBox>
     </FlexWindowModal>
   );
