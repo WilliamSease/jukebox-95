@@ -67,10 +67,10 @@ export function formatTime(seconds: number): string {
  * Anything downstream can start playback just by dispatching a new nowPlaying —
  * no need to route through this hook directly.
  */
-export function usePlayerEngine([
-  globalState,
-  dispatch,
-]: GlobalReducer): UsePlayerEngineResult {
+export function usePlayerEngine(
+  [globalState, dispatch]: GlobalReducer,
+  preCacheSongs: boolean,
+): UsePlayerEngineResult {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [albumArtUrl, setAlbumArtUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -135,7 +135,7 @@ export function usePlayerEngine([
   const analyserRef = useRef<AnalyserNode | null>(null);
 
   const ensureAudioGraph = useCallback(() => {
-    if (globalState.config.preCacheSongs) {
+    if (preCacheSongs) {
       const audio = audioRef.current;
       if (!audio || analyserRef.current) return analyserRef.current;
 
@@ -151,7 +151,7 @@ export function usePlayerEngine([
       analyserRef.current = analyser;
       return analyser;
     }
-  }, [globalState.config.preCacheSongs]);
+  }, [preCacheSongs]);
 
   // Whenever nowPlaying changes to a different track: fetch the stream URL and play it.
   useEffect(() => {
@@ -162,7 +162,7 @@ export function usePlayerEngine([
     setIsBuffering(true);
 
     (async () => {
-      if (globalState.config.preCacheSongs) {
+      if (preCacheSongs) {
         try {
           const { buffer, contentType } = await window.subsonic.fetchStreamBlob(
             nowPlaying.id,
@@ -217,7 +217,7 @@ export function usePlayerEngine([
     };
     // Only re-run when the *track itself* changes, not on every nowPlaying object identity change
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nowPlaying?.id, globalState.config.preCacheSongs]);
+  }, [nowPlaying?.id, preCacheSongs]);
 
   // Whenever the cover art reference changes: resolve an authenticated art URL.
   // `coverArt` is Subsonic's own art-reference id and is usually distinct from the song id.

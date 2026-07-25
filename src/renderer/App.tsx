@@ -31,6 +31,7 @@ import { HelpDialog } from './dialogs/HelpDialog';
 import { ContactDialog } from './dialogs/ContactDialog';
 import useGlobalState from './hooks/useGlobalState';
 import { usePlayerEngine } from './hooks/usePlayerEngine';
+import { config } from 'process';
 
 const GlobalStyles = createGlobalStyle`
   ${styleReset}
@@ -59,13 +60,20 @@ const GlobalStyles = createGlobalStyle`
 export default function App() {
   const global = useGlobalState();
   const [state, dispatch] = global;
-  const player = usePlayerEngine(global);
+  const fancyPlayer = usePlayerEngine(global, true);
+  const simplePlayer = usePlayerEngine(global, false);
+  const player = state.config.preCacheSongs ? fancyPlayer : simplePlayer;
 
   return (
     <ThemeProvider theme={state.config.theme}>
       <GlobalStyles />
       {/* hidden — this is the actual audio element being driven */}
-      <audio ref={player.audioRef} style={{ display: 'none' }} />
+      {state.config.preCacheSongs && (
+        <audio ref={fancyPlayer.audioRef} style={{ display: 'none' }} />
+      )}
+      {!state.config.preCacheSongs && (
+        <audio ref={simplePlayer.audioRef} style={{ display: 'none' }} />
+      )}
 
       <Window
         style={{
