@@ -39,5 +39,9 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
           # This is used for uploading release assets to github
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.ref_name }}
         run: |
           npm exec electron-builder -- --publish always --win --linux
+          echo "Finding draft release matching tag..."
+          # Edits the existing draft to turn it into a published live release
+          gh release edit "$TAG_NAME" --draft=false
