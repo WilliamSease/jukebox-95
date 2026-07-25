@@ -524,7 +524,7 @@ Here's the most notable changes since `v0.10.0`. Its been about a year since a r
 - **Support asar**
 - **Support icon**
 
-# 0.1.0 (2015.5.27)
+# 0.0.0 (2015.5.27)
 
 #### Features
 

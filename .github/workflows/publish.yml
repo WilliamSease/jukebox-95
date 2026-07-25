@@ -25,7 +25,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_WORKSPACE: 'williamsease/subsonic-player-95/'
         with:
-          version-type: 'minor'
+          version-type: 'patch'
+          tag-prefix:  'v'
 
       - name: Install Node and NPM
         uses: actions/setup-node@v3
