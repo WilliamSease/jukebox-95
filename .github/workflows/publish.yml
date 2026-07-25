@@ -20,7 +20,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           version-type: 'minor'
-          PACKAGEJSON_DIR: 'williamsease/subsonic-player-95/'
+          GITHUB_WORKSPACE: 'williamsease/subsonic-player-95/'
 
       - name: Checkout git repo
         uses: actions/checkout@v3
