@@ -35,7 +35,6 @@ jobs:
         with:
           version-type: 'patch'
           tag-prefix:  'v'
-          skip-tag:  'true'
 
       - name: Automated Version Bump (release/app)
         uses: 'phips28/gh-action-bump-version@master'
@@ -88,4 +87,4 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          gh release edit "$VERSION" --draft=false --repo WilliamSease/subsonic-player-95
+          gh release edit "v$VERSION" --draft=false --repo WilliamSease/subsonic-player-95
