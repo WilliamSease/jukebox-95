@@ -82,6 +82,23 @@ export function getStreamUrl(id: string): string {
   return buildAuthedUrl('stream.view', { id });
 }
 
+/**
+ * Fetches the full track server-side (Node's fetch — never subject to
+ * browser CORS) and hands raw bytes back for the renderer to wrap in a Blob.
+ * This is what lets playback/visualizer work against ANY Subsonic-compatible
+ * server, regardless of whether it sends CORS headers on the stream endpoint.
+ */
+export async function fetchStreamBlob(id: string): Promise<{ buffer: ArrayBuffer; contentType: string }> {
+  const url = getStreamUrl(id);
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`Stream fetch failed: ${res.status} ${res.statusText}`);
+  }
+  const contentType = res.headers.get('content-type') ?? 'audio/mpeg';
+  const buffer = await res.arrayBuffer();
+  return { buffer, contentType };
+}
+
 export function getCoverArtUrl(id: string, size?: number): string {
   return buildAuthedUrl('getCoverArt.view', { id, size });
 }

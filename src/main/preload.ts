@@ -46,7 +46,11 @@ const subsonicBridge = {
     ipcRenderer.invoke('subsonic:getCoverArtUrl', id, size),
   getStreamUrl: (id: string): Promise<string> =>
     ipcRenderer.invoke('subsonic:getStreamUrl', id),
+  fetchStreamBlob: (id: string): Promise<{ buffer: ArrayBuffer; contentType: string }> =>
+    ipcRenderer.invoke('subsonic:fetchStreamBlob', id),
 };
+
+
 
 contextBridge.exposeInMainWorld('subsonic', subsonicBridge);
 

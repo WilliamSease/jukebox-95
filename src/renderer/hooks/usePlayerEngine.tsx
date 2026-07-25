@@ -10,6 +10,8 @@ export interface UsePlayerEngineResult {
   /** Resolved, authenticated cover art URL for the current nowPlaying track (or null) */
   albumArtUrl: string | null;
   isPlaying: boolean;
+  /** True while the current track's audio is downloading, before playback starts */
+  isBuffering: boolean;
   /** Current playback position in seconds — mirrors globalState.player.progress */
   progress: number;
   duration: number;
@@ -72,10 +74,23 @@ export function usePlayerEngine([
   const audioRef = useRef<HTMLAudioElement>(null);
   const [albumArtUrl, setAlbumArtUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
   const [duration, setDuration] = useState(0);
   const [repeat, setRepeat] = useState(false);
   const [shuffle, setShuffle] = useState(false);
   const [volume, setVolume] = useState(1);
+
+  // The blob: URL currently assigned to audio.src — tracked so we can revoke
+  // it when a new track loads (or on unmount). Blob URLs pin their backing
+  // ArrayBuffer in memory until explicitly revoked, so this matters at scale.
+  const currentBlobUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (currentBlobUrlRef.current)
+        URL.revokeObjectURL(currentBlobUrlRef.current);
+    };
+  }, []);
 
   // Hydrate saved volume once on mount (falls back to 1 if nothing saved yet)
   useEffect(() => {
@@ -142,12 +157,28 @@ export function usePlayerEngine([
     if (!audio || !nowPlaying) return;
 
     let cancelled = false;
+    setIsBuffering(true);
 
     (async () => {
       try {
-        const url = await window.subsonic.getStreamUrl(nowPlaying.id);
+        const { buffer, contentType } = await window.subsonic.fetchStreamBlob(
+          nowPlaying.id,
+        );
         if (cancelled) return;
-        audio.src = url;
+
+        // blob: URLs are same-origin by construction — no CORS taint, no
+        // dependency on the Subsonic server sending any particular headers,
+        // works identically against every server.
+        const blob = new Blob([buffer], { type: contentType });
+        const blobUrl = URL.createObjectURL(blob);
+
+        // Revoke the PREVIOUS track's blob URL now that we're switching off it.
+        // (Not the one we just created — that one needs to stay alive while it plays.)
+        if (currentBlobUrlRef.current)
+          URL.revokeObjectURL(currentBlobUrlRef.current);
+        currentBlobUrlRef.current = blobUrl;
+
+        audio.src = blobUrl;
         audio.currentTime = 0;
 
         ensureAudioGraph();
@@ -166,6 +197,8 @@ export function usePlayerEngine([
             },
           });
         }
+      } finally {
+        if (!cancelled) setIsBuffering(false);
       }
     })();
 
@@ -315,6 +348,7 @@ export function usePlayerEngine([
     audioRef,
     albumArtUrl,
     isPlaying,
+    isBuffering,
     progress,
     duration,
     progressPercent: duration > 0 ? (progress / duration) * 100 : 0,

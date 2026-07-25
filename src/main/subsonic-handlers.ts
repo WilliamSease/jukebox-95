@@ -5,6 +5,7 @@ import {
   getApi,
   getStreamUrl,
   getCoverArtUrl,
+  fetchStreamBlob,
   SubsonicCredentials,
 } from './subsonic';
 
@@ -55,5 +56,12 @@ export function registerSubsonicHandlers() {
 
   ipcMain.handle('subsonic:getStreamUrl', (_event, id: string) => {
     return getStreamUrl(id);
+  });
+
+  // Fetches the full track server-side and returns raw bytes — the renderer
+  // wraps this in a Blob so playback/analysis never touches a cross-origin
+  // URL, sidestepping CORS entirely regardless of server config.
+  ipcMain.handle('subsonic:fetchStreamBlob', async (_event, id: string) => {
+    return fetchStreamBlob(id);
   });
 }
