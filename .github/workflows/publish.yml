@@ -34,6 +34,7 @@ jobs:
           GITHUB_WORKSPACE: 'williamsease/subsonic-player-95/'
         with:
           version-type: 'patch'
+          tag-prefix:  'v'
 
       - name: Automated Version Bump (release/app)
         uses: 'phips28/gh-action-bump-version@master'
