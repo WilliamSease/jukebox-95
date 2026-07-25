@@ -14,6 +14,11 @@ jobs:
         os: [macos-latest]
 
     steps:
+
+
+      - name: Checkout git repo
+        uses: actions/checkout@v3
+
       - name: Automated Version Bump
         uses: 'phips28/gh-action-bump-version@master'
         env:
@@ -21,9 +26,6 @@ jobs:
           GITHUB_WORKSPACE: 'williamsease/subsonic-player-95/'
         with:
           version-type: 'minor'
-
-      - name: Checkout git repo
-        uses: actions/checkout@v3
 
       - name: Install Node and NPM
         uses: actions/setup-node@v3
