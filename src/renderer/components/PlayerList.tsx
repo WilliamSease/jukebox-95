@@ -233,9 +233,9 @@ export function PlayerList(props: {
           ⏭
         </Button>
         <Button
-          variant={true ? 'flat' : 'default'}
+          variant={player.repeat ? 'flat' : 'default'}
           onClick={() => {
-            //todo
+            player.toggleRepeat();
           }}
           className="toolbarButton"
         >
@@ -243,9 +243,9 @@ export function PlayerList(props: {
         </Button>
         <Button
           onClick={() => {
-            //todo
+            player.toggleShuffle();
           }}
-          variant={true ? 'flat' : 'default'}
+          variant={player.shuffle ? 'flat' : 'default'}
           className="toolbarButton"
         >
           Shuffle

@@ -27,9 +27,16 @@ export interface UsePlayerEngineResult {
   next: () => void;
   /**
    * Standard player UX: if more than 3s into the current track, restarts it
-   * instead of jumping back a track. Otherwise goes to the previous track.
+   * instead of jumping back a track. Otherwise goes to the previous track
+   * (or steps back through shuffle history, if shuffle is on).
    */
   previous: () => void;
+  /** When true, next() wraps to the start of the queue at the end (and vice versa for previous) */
+  repeat: boolean;
+  toggleRepeat: () => void;
+  /** When true, next() picks a random remaining track instead of the next sequential one */
+  shuffle: boolean;
+  toggleShuffle: () => void;
 }
 
 /** Formats seconds as "m:ss" for transport bar display, e.g. 275 -> "4:35" */
@@ -50,16 +57,29 @@ export function usePlayerEngine([
   globalState,
   dispatch,
 ]: GlobalReducer): UsePlayerEngineResult {
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const [albumArtUrl, setAlbumArtUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
+  const [repeat, setRepeat] = useState(false);
+  const [shuffle, setShuffle] = useState(false);
 
   const { nowPlaying, tracksInPlayer, progress } = globalState.player;
 
   const currentIndex = nowPlaying
     ? tracksInPlayer.findIndex((t) => t.id === nowPlaying.id)
     : -1;
+
+  // Actual play-order history (not queue order) — lets shuffle's "previous"
+  // step back through what really played, instead of just picking another
+  // random track. Ref, not state: it shouldn't trigger re-renders on its own.
+  const historyRef = useRef<string[]>([]);
+
+  useEffect(() => {
+    if (!nowPlaying) return;
+    const last = historyRef.current[historyRef.current.length - 1];
+    if (last !== nowPlaying.id) historyRef.current.push(nowPlaying.id);
+  }, [nowPlaying?.id]);
 
   // Whenever nowPlaying changes to a different track: fetch the stream URL and play it.
   useEffect(() => {
@@ -152,21 +172,64 @@ export function usePlayerEngine([
   );
 
   const next = useCallback(() => {
+    if (tracksInPlayer.length === 0) return;
+
+    if (shuffle) {
+      // pick any track other than the current one (falls back to itself if it's the only track)
+      const pool =
+        tracksInPlayer.length > 1
+          ? tracksInPlayer.filter((t) => t.id !== nowPlaying?.id)
+          : tracksInPlayer;
+      const pick = pool[Math.floor(Math.random() * pool.length)];
+      if (pick) dispatch({ player: { nowPlaying: pick, progress: 0 } });
+      return;
+    }
+
     if (currentIndex === -1) return;
     const nextTrack = tracksInPlayer[currentIndex + 1];
-    if (nextTrack) dispatch({ player: { nowPlaying: nextTrack, progress: 0 } });
-  }, [currentIndex, tracksInPlayer, dispatch]);
+    if (nextTrack) {
+      dispatch({ player: { nowPlaying: nextTrack, progress: 0 } });
+    } else if (repeat) {
+      dispatch({ player: { nowPlaying: tracksInPlayer[0], progress: 0 } }); // wrap to start
+    }
+  }, [shuffle, repeat, currentIndex, tracksInPlayer, nowPlaying?.id, dispatch]);
 
   const previous = useCallback(() => {
-    if (currentIndex === -1) return;
     // more than 3s in -> restart current track, matching standard player UX
     if (audioRef.current && audioRef.current.currentTime > 3) {
       audioRef.current.currentTime = 0;
       return;
     }
+
+    if (shuffle) {
+      // step back through actual play history, not the queue's sequential order
+      const hist = historyRef.current;
+      if (hist.length > 1) {
+        hist.pop(); // drop the current track — it'll get re-pushed when nowPlaying changes back
+        const prevId = hist[hist.length - 1];
+        const prevTrack = tracksInPlayer.find((t) => t.id === prevId);
+        if (prevTrack)
+          dispatch({ player: { nowPlaying: prevTrack, progress: 0 } });
+      }
+      return;
+    }
+
+    if (currentIndex === -1) return;
     const prevTrack = tracksInPlayer[currentIndex - 1];
-    if (prevTrack) dispatch({ player: { nowPlaying: prevTrack, progress: 0 } });
-  }, [currentIndex, tracksInPlayer, dispatch]);
+    if (prevTrack) {
+      dispatch({ player: { nowPlaying: prevTrack, progress: 0 } });
+    } else if (repeat) {
+      dispatch({
+        player: {
+          nowPlaying: tracksInPlayer[tracksInPlayer.length - 1],
+          progress: 0,
+        },
+      }); // wrap to end
+    }
+  }, [shuffle, repeat, currentIndex, tracksInPlayer, dispatch]);
+
+  const toggleRepeat = useCallback(() => setRepeat((r) => !r), []);
+  const toggleShuffle = useCallback(() => setShuffle((s) => !s), []);
 
   // Always-current ref so the 'ended' listener (registered once) can call
   // next() without that effect needing to re-run every time the queue changes.
@@ -194,9 +257,13 @@ export function usePlayerEngine([
     progress,
     duration,
     progressPercent: duration > 0 ? (progress / duration) * 100 : 0,
-    isFirstTrack: currentIndex <= 0,
-    isLastTrack:
-      currentIndex === -1 || currentIndex === tracksInPlayer.length - 1,
+    isFirstTrack: shuffle
+      ? historyRef.current.length <= 1
+      : !repeat && currentIndex <= 0,
+    isLastTrack: shuffle
+      ? tracksInPlayer.length <= 1
+      : !repeat &&
+        (currentIndex === -1 || currentIndex === tracksInPlayer.length - 1),
     play,
     pause,
     resume,
@@ -204,5 +271,9 @@ export function usePlayerEngine([
     seek,
     next,
     previous,
+    repeat,
+    toggleRepeat,
+    shuffle,
+    toggleShuffle,
   };
 }
