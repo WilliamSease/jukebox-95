@@ -55,7 +55,21 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh pr create --base main --head release-bump-${{ github.run_id }} --title "ci: version bump to v${{ steps.get-version.outputs.version }}" --body "Automated" >> gh pr merge -t "ci: version bump to v${{ steps.get-version.outputs.version }}" --auto -d -s
+          set -euo pipefail
+
+          PR_URL=$(gh pr create \
+            --base main \
+            --head release-bump-${{ github.run_id }} \
+            --title "ci: version bump to v${{ steps.get-version.outputs.version }}" \
+            --body "Automated")
+
+          echo "$PR_URL"
+
+          gh pr merge "$PR_URL" \
+            --auto \
+            --squash \
+            --delete-branch
+          
 
       - name: Install Node and NPM
         uses: actions/setup-node@v3
