@@ -66,7 +66,6 @@ jobs:
           echo "$PR_URL"
 
           gh pr merge "$PR_URL" \
-            --auto \
             --squash \
             --delete-branch \
             --admin
