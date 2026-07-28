@@ -31,8 +31,7 @@
     "materialTextInvert": "rgb(255, 255, 255)",
     "progress": "rgb(192, 0, 0)",
     "tooltip": "rgb(64, 0, 0)",
-    "background": "#4C6663",
-    "solidTextBackgroundOverride": ""
+    "background": "#4C6663"
   },
   "showBackgroundImage": false,
   "backgroundImageBase64": "",
