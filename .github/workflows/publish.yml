@@ -8,6 +8,8 @@ on:
 jobs:
   publish:
 
+    if: github.actor != 'github-actions[bot]'
+
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -54,8 +56,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh pr create --base main --head release-bump-${{ github.run_id }} \
-            --title "ci: version bump to v${{ steps.get-version.outputs.version }}" --body "Automated"
-          gh pr merge --auto --squash --delete-branch
+            --title "ci: version bump to v${{ steps.get-version.outputs.version }}" --body "Automated" \
+            gh pr merge -s "ci: version bump to v${{ steps.get-version.outputs.version }}" --auto --squash --delete-branch
 
       - name: Install Node and NPM
         uses: actions/setup-node@v3
