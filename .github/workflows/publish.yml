@@ -55,7 +55,7 @@ jobs:
         run: |
           gh pr create --base main --head release-bump-${{ github.run_id }} \
             --title "ci: version bump to v${{ steps.get-version.outputs.version }}" --body "Automated"
-          gh pr merge --auto --squash
+          gh pr merge --auto --squash --delete-branch
 
       - name: Install Node and NPM
         uses: actions/setup-node@v3
