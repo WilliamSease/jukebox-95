@@ -30,7 +30,6 @@ jobs:
           GITHUB_WORKSPACE: 'williamsease/jukebox-95/'
         with:
           version-type: 'patch'
-          tag-prefix: 'v'
           target-branch: 'main'
           skip-tag: 'true'
 
@@ -42,6 +41,7 @@ jobs:
         with:
           version-type: 'patch'
           PACKAGEJSON_DIR: 'release/app'
+          tag-prefix: 'v'
           target-branch: 'main'
 
       - name: Get bumped version
