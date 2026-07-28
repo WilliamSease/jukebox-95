@@ -32,6 +32,7 @@ jobs:
           version-type: 'patch'
           tag-prefix: 'v'
           target-branch: 'main'
+          skip-tag: 'true'
 
       - name: Automated Version Bump (main/release/app)
         uses: 'phips28/gh-action-bump-version@master'
@@ -41,7 +42,6 @@ jobs:
         with:
           version-type: 'patch'
           PACKAGEJSON_DIR: 'release/app'
-          skip-tag: 'true'
           target-branch: 'main'
 
       - name: Get bumped version
