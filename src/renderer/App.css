@@ -1,0 +1,19 @@
+body {    
+  height:100% !important;
+  user-select: none;
+
+}
+.fullsize{
+  height: 100%;
+  width: 100%;
+}
+.dragApplication {
+  -webkit-app-region: drag;
+}
+.clickableUnderDraggable {
+  -webkit-app-region: no-drag;
+  pointer-events: auto;
+}
+.toolbarButton {
+  margin-left:3px;
+}

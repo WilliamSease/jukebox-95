@@ -1,0 +1,17 @@
+{
+  "name": "jukebox-95",
+  "version": "0.0.37",
+  "description": "",
+  "author": {
+    "name": "William Sease",
+    "email": "William.Sease@proton.me"
+  },
+  "main": "./dist/main/main.js",
+  "scripts": {
+    "rebuild": "node -r ts-node/register ../../.erb/scripts/electron-rebuild.js",
+    "postinstall": "npm run rebuild && npm run link-modules",
+    "link-modules": "node -r ts-node/register ../../.erb/scripts/link-modules.ts"
+  },
+  "artifactName": "${productName}.${ext}",
+  "dependencies": {}
+}

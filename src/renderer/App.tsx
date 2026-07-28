@@ -1,0 +1,266 @@
+import { createGlobalStyle, ThemeProvider } from 'styled-components';
+import {
+  Button,
+  Separator,
+  styleReset,
+  TextInput,
+  Toolbar,
+  Window,
+  WindowHeader,
+} from 'react95';
+import ms_sans_serif from 'react95/dist/fonts/ms_sans_serif.woff2';
+import ms_sans_serif_bold from 'react95/dist/fonts/ms_sans_serif_bold.woff2';
+import './App.css';
+import MenuButtonWithDropDown from './sdk/MenuButtonWithDropDown';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
+import { isNil } from 'lodash';
+import { SettingsDialog } from './dialogs/SettingsDialog';
+import { VolumeSlider } from './components/VolumeSlider';
+import { ArtDialog } from './dialogs/ArtDialog';
+import { LibraryTree } from './components/LibraryTree/LibraryTree';
+import { PlayerList } from './components/PlayerList';
+import { AboutDialog, TodoDialog } from './dialogs/AboutDialog';
+import { FlexColumn } from './sdk/FlexElements';
+import { AuthDialog } from './dialogs/AuthDialog';
+import { ErrorDialog } from './dialogs/ErrorDialog';
+import { NetworkGraphDialog } from './dialogs/NetworkGraphDialog';
+import { FocusModeDialog } from './dialogs/FocusModeDialog';
+import { ContactDialog } from './dialogs/ContactDialog';
+import useGlobalState from './hooks/useGlobalState';
+import { usePlayerEngine } from './hooks/usePlayerEngine';
+
+const GlobalStyles = createGlobalStyle`
+  ${styleReset}
+  @font-face {
+    font-family: 'ms_sans_serif';
+    src: url('${ms_sans_serif}') format('woff2');
+    font-weight: 400;
+    font-style: normal
+  }
+  @font-face {
+    font-family: 'ms_sans_serif';
+    src: url('${ms_sans_serif_bold}') format('woff2');
+    font-weight: bold;
+    font-style: normal
+  }
+  body {
+    font-family: 'ms_sans_serif';
+  }
+  .window-title{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+`;
+
+export default function App() {
+  const global = useGlobalState();
+  const [state, dispatch] = global;
+  const player = usePlayerEngine(global);
+
+  return (
+    <ThemeProvider theme={state.settings.theme}>
+      <GlobalStyles />
+      {/* hidden — this is the actual audio element being driven */}
+      <audio ref={player.audioRef} style={{ display: 'none' }} />
+
+      <Window
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        <SettingsDialog global={global} />
+
+        <ArtDialog global={global} />
+        <AboutDialog global={global} />
+        {state.windowOpen.contact && <ContactDialog global={global} />}
+        <TodoDialog global={global} />
+        <AuthDialog global={global} />
+        <NetworkGraphDialog global={global} />
+        <ErrorDialog global={global} />
+        <FocusModeDialog global={global} player={player} />
+        <WindowHeader
+          title="Jukebox95"
+          className="window-title dragApplication"
+        >
+          <span style={{ flexGrow: 1 }}>Jukebox95</span>
+          <Button
+            className="clickableUnderDraggable"
+            onClick={() => {
+              window.electron.ipcRenderer.sendMessage('minimizeButton');
+            }}
+          >
+            _
+          </Button>
+          <Button
+            className="clickableUnderDraggable toolbarButton"
+            onClick={() => {
+              window.electron.ipcRenderer.sendMessage('quitButton');
+            }}
+          >
+            ✕
+          </Button>
+        </WindowHeader>
+        <Toolbar>
+          <MenuButtonWithDropDown
+            buttonText="File"
+            menuOptions={[
+              {
+                text: 'Settings',
+                onClick: () => dispatch({ windowOpen: { settings: true } }),
+              },
+            ]}
+          />
+          <MenuButtonWithDropDown
+            buttonText="Help"
+            menuOptions={[
+              {
+                text: 'About',
+                onClick: () => dispatch({ windowOpen: { about: true } }),
+              },
+              {
+                text: 'Todo',
+                onClick: () => dispatch({ windowOpen: { todo: true } }),
+              },
+            ]}
+          />
+          <MenuButtonWithDropDown
+            buttonText="Extra"
+            menuOptions={[
+              {
+                text: 'Focus mode...',
+                onClick: () => dispatch({ windowOpen: { focus: true } }),
+              },
+              {
+                text: 'Try me...',
+                onClick: () => dispatch({ windowOpen: { tryMe: true } }),
+              },
+            ]}
+          />
+          <span style={{ flexGrow: 1 }} />
+        </Toolbar>
+        <Separator />
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            flexGrow: 1,
+            marginTop: 10,
+            marginLeft: 10,
+            marginRight: 10,
+            marginBottom: 40,
+          }}
+        >
+          <FlexColumn
+            style={{
+              width: `${state.ui.leftPanelBigger ? 70 : 30}%`,
+              height: '100%',
+            }}
+          >
+            {state.apiReady && <LibraryTree global={global} />}
+            {state.ui.showAlbumArt &&
+              !state.ui.leftPanelBigger &&
+              !isNil(state.player.nowPlaying) && (
+                <Window
+                  title={'Artwork'}
+                  style={{
+                    height: 410,
+                    width: 375,
+                  }}
+                >
+                  <WindowHeader
+                    title="AlbumArt"
+                    className="window-title dragApplication"
+                  >
+                    <div
+                      style={{
+                        maxWidth: '300px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    ></div>
+
+                    <Button
+                      className="toolbarButton clickableUnderDraggable"
+                      onClick={() =>
+                        dispatch({
+                          ui: { showAlbumArt: !state.ui.showAlbumArt },
+                        })
+                      }
+                    >
+                      ✕
+                    </Button>
+                  </WindowHeader>
+                  {!isNil(player.albumArtUrl) && (
+                    <img
+                      style={{ height: 365, width: 365 }}
+                      src={player.albumArtUrl ?? undefined}
+                      alt="album art"
+                    />
+                  )}
+                </Window>
+              )}
+            {!state.ui.showAlbumArt && !state.ui.leftPanelBigger && (
+              <Button
+                className="toolbarButton clickableUnderDraggable"
+                onClick={() =>
+                  dispatch({ ui: { showAlbumArt: !state.ui.showAlbumArt } })
+                }
+                style={{ width: 100, height: 30, marginTop: 5 }}
+                disabled={isNil(state.player.nowPlaying)}
+              >
+                {`${state.ui.showAlbumArt ? 'hide' : 'show'} art`}
+              </Button>
+            )}
+          </FlexColumn>
+          <div
+            style={{
+              width: `${state.ui.leftPanelBigger ? 30 : 70}%`,
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+            }}
+          >
+            <Toolbar>
+              <Button
+                variant="thin"
+                onClick={() =>
+                  dispatch({
+                    ui: { leftPanelBigger: !state.ui.leftPanelBigger },
+                  })
+                }
+                style={{
+                  transform: state.ui.leftPanelBigger
+                    ? 'scaleX(-1)'
+                    : undefined,
+                }}
+              >
+                👉
+              </Button>
+              <span style={{ flexGrow: 1 }}></span>
+              {state.ui.showTracksIndividually ? `Individual` : `Group`}
+              <Button
+                style={{ marginLeft: '.5rem' }}
+                onClick={() =>
+                  dispatch({
+                    ui: {
+                      showTracksIndividually: !state.ui.showTracksIndividually,
+                    },
+                  })
+                }
+              >
+                ↔️
+              </Button>
+            </Toolbar>
+            <PlayerList global={global} player={player} />
+          </div>
+        </div>
+      </Window>
+    </ThemeProvider>
+  );
+}
