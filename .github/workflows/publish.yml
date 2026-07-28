@@ -29,8 +29,7 @@ jobs:
         with:
           version-type: 'patch'
           tag-prefix: 'v'
-          target-branch: 'main'
-
+          target-branch: 'release-bump-${{ github.run_id }}'
 
       - name: Automated Version Bump (main/release/app)
         uses: 'phips28/gh-action-bump-version@master'
@@ -41,7 +40,7 @@ jobs:
           version-type: 'patch'
           PACKAGEJSON_DIR: 'release/app'
           skip-tag: 'true'
-          target-branch: 'main'
+          target-branch: 'release-bump-${{ github.run_id }}'
 
       - name: Open and auto-merge bump PR
         env:
