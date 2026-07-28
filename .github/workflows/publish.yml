@@ -34,7 +34,7 @@ jobs:
         with:
           version-type: 'patch'
           tag-prefix: 'v'
-          target-branch: 'main'
+          target-branch: 'release-bump-${{ github.run_id }}'
 
       - name: Automated Version Bump (main/release/app)
         uses: 'phips28/gh-action-bump-version@master'
@@ -45,11 +45,30 @@ jobs:
           version-type: 'patch'
           PACKAGEJSON_DIR: 'release/app'
           skip-tag: 'true'
-          target-branch: 'main'
+          target-branch: 'release-bump-${{ github.run_id }}'
 
       - name: Get bumped version
         id: get-version
         run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Open and auto-merge bump PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          PR_URL=$(gh pr create \
+            --base main \
+            --head release-bump-${{ github.run_id }} \
+            --title "ci: version bump to v${{ steps.get-version.outputs.version }}" \
+            --body "Automated")
+
+          echo "$PR_URL"
+
+          gh pr merge "$PR_URL" \
+            --auto \
+            --squash \
+            --delete-branch
           
 
       - name: Install Node and NPM
