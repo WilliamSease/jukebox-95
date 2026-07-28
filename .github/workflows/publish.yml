@@ -68,7 +68,8 @@ jobs:
           gh pr merge "$PR_URL" \
             --auto \
             --squash \
-            --delete-branch
+            --delete-branch \
+            --admin
           
 
       - name: Install Node and NPM
