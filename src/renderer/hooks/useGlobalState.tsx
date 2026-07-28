@@ -12,9 +12,9 @@ export type GlobalReducer = [
   (toModify: DeepPartial<GlobalState>) => void,
 ];
 
-export type CachedSettingsType = [string, SettingsType][];
+export type CachedVisualSettingsType = [string, VisualSettingsType][];
 
-export interface SettingsType {
+export interface VisualSettingsType {
   theme: Theme;
   showBackgroundImage: boolean;
   backgroundImageBase64: string;
@@ -24,8 +24,8 @@ export interface SettingsType {
   solidTextBackgroundOverride: string;
 }
 
-export const SettingsDefault: SettingsType = {
-  theme: Object.entries(Themes.default).find(([str]) => str === 'original')![1],
+export const visualSettingsDefault: VisualSettingsType = {
+  theme: original,
   showBackgroundImage: false,
   backgroundImageBase64: '',
   backgroundSizeStrategy: 'cover',
@@ -34,10 +34,20 @@ export const SettingsDefault: SettingsType = {
   solidTextBackgroundOverride: '',
 };
 
+export interface BehaviorSettingsType {
+  randomizeTree: boolean;
+}
+
+export const behaviorSettingsDefault: BehaviorSettingsType = {
+  randomizeTree: false,
+};
+
 export interface GlobalState {
   apiReady: boolean;
-  settings: SettingsType;
-  userCachedSettings: CachedSettingsType;
+  visualSettings: VisualSettingsType;
+  userCachedSettings: CachedVisualSettingsType;
+
+  behaviorSettings: BehaviorSettingsType;
 
   useSubsonic: boolean;
   libraryPath: string;
@@ -67,7 +77,8 @@ export interface GlobalState {
 
 const initialConfiguration: GlobalState = {
   apiReady: false,
-  settings: SettingsDefault,
+  visualSettings: visualSettingsDefault,
+  behaviorSettings: behaviorSettingsDefault,
   userCachedSettings: [],
   useSubsonic: true,
   libraryPath: '',

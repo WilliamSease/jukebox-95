@@ -35,13 +35,13 @@ export function PlayerList(props: {
       width: '100%',
       position: 'absolute',
       display: 'flex',
-      backgroundImage: state.settings.showBackgroundImage
-        ? `url('${state.settings.backgroundImageBase64}')`
+      backgroundImage: state.visualSettings.showBackgroundImage
+        ? `url('${state.visualSettings.backgroundImageBase64}')`
         : undefined,
-      backgroundSize: state.settings.backgroundSizeStrategy,
+      backgroundSize: state.visualSettings.backgroundSizeStrategy,
     } as CSSProperties;
 
-    const parsedStringStyles = state.settings.backgroundCustomCSS
+    const parsedStringStyles = state.visualSettings.backgroundCustomCSS
       .split(';')
       .reduce((acc, rule) => {
         const [property, value] = rule.split(':');
@@ -56,7 +56,7 @@ export function PlayerList(props: {
         return acc;
       }, {});
     return { ...out, ...parsedStringStyles };
-  }, [state.settings]);
+  }, [state.visualSettings]);
 
   return (
     <FlexColumn style={{ flexGrow: 1 }}>
@@ -78,7 +78,9 @@ export function PlayerList(props: {
                   <AlternateGrey
                     index={i}
                     isSelected={i === highlighted}
-                    solidTextBackground={state.settings.solidTextBackground}
+                    solidTextBackground={
+                      state.visualSettings.solidTextBackground
+                    }
                     onClick={playThisTrack}
                     key={i + 'track'}
                   >
@@ -91,10 +93,10 @@ export function PlayerList(props: {
                       <div style={{ width: '3rem' }}>
                         <ProgrammaticallyBackgroundableSpan
                           solidTextBackgroundOverride={
-                            state.settings.solidTextBackgroundOverride
+                            state.visualSettings.solidTextBackgroundOverride
                           }
                           solidTextBackground={
-                            state.settings.solidTextBackground
+                            state.visualSettings.solidTextBackground
                           }
                           isSelected={i === highlighted}
                         >
@@ -104,11 +106,11 @@ export function PlayerList(props: {
                       <div style={{ width: '2rem' }}>
                         <ProgrammaticallyBackgroundableSpan
                           solidTextBackgroundOverride={
-                            state.settings.solidTextBackgroundOverride
+                            state.visualSettings.solidTextBackgroundOverride
                           }
 
                           solidTextBackground={
-                            state.settings.solidTextBackground
+                            state.visualSettings.solidTextBackground
                           }
                           isSelected={i === highlighted}
                         >
@@ -118,11 +120,11 @@ export function PlayerList(props: {
                       <div style={{ width: '25rem' }}>
                         <ProgrammaticallyBackgroundableSpan
                           solidTextBackgroundOverride={
-                            state.settings.solidTextBackgroundOverride
+                            state.visualSettings.solidTextBackgroundOverride
                           }
 
                           solidTextBackground={
-                            state.settings.solidTextBackground
+                            state.visualSettings.solidTextBackground
                           }
                           isSelected={i === highlighted}
                         >
@@ -134,11 +136,11 @@ export function PlayerList(props: {
                           i % 2 === 0 ? (
                             <ProgrammaticallyBackgroundableSpan
                               solidTextBackgroundOverride={
-                                state.settings.solidTextBackgroundOverride
+                                state.visualSettings.solidTextBackgroundOverride
                               }
 
                               solidTextBackground={
-                                state.settings.solidTextBackground
+                                state.visualSettings.solidTextBackground
                               }
                               isSelected={i === highlighted}
                             >
@@ -148,11 +150,12 @@ export function PlayerList(props: {
                             <div>
                               <ProgrammaticallyBackgroundableSpan
                                 solidTextBackgroundOverride={
-                                  state.settings.solidTextBackgroundOverride
+                                  state.visualSettings
+                                    .solidTextBackgroundOverride
                                 }
 
                                 solidTextBackground={
-                                  state.settings.solidTextBackground
+                                  state.visualSettings.solidTextBackground
                                 }
                                 isSelected={i === highlighted}
                               >
@@ -184,11 +187,11 @@ export function PlayerList(props: {
                       <div key={i + 'label'}>
                         <ProgrammaticallyBackgroundableSpan
                           solidTextBackgroundOverride={
-                            state.settings.solidTextBackgroundOverride
+                            state.visualSettings.solidTextBackgroundOverride
                           }
 
                           solidTextBackground={
-                            state.settings.solidTextBackground
+                            state.visualSettings.solidTextBackground
                           }
                           isSelected={false}
                         >
@@ -201,7 +204,9 @@ export function PlayerList(props: {
                     <AlternateGrey
                       index={1}
                       isSelected={i === highlighted}
-                      solidTextBackground={state.settings.solidTextBackground}
+                      solidTextBackground={
+                        state.visualSettings.solidTextBackground
+                      }
                       style={{
                         display: 'flex',
                         flexDirection: 'row',
@@ -221,10 +226,12 @@ export function PlayerList(props: {
                       </span>
                       <ProgrammaticallyBackgroundableSpan
                         solidTextBackgroundOverride={
-                          state.settings.solidTextBackgroundOverride
+                          state.visualSettings.solidTextBackgroundOverride
                         }
 
-                        solidTextBackground={state.settings.solidTextBackground}
+                        solidTextBackground={
+                          state.visualSettings.solidTextBackground
+                        }
                         isSelected={i === highlighted}
                       >
                         <span

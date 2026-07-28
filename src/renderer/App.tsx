@@ -3,7 +3,6 @@ import {
   Button,
   Separator,
   styleReset,
-  TextInput,
   Toolbar,
   Window,
   WindowHeader,
@@ -12,11 +11,9 @@ import ms_sans_serif from 'react95/dist/fonts/ms_sans_serif.woff2';
 import ms_sans_serif_bold from 'react95/dist/fonts/ms_sans_serif_bold.woff2';
 import './App.css';
 import MenuButtonWithDropDown from './sdk/MenuButtonWithDropDown';
-import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { isNil } from 'lodash';
 import { SettingsDialog } from './dialogs/SettingsDialog';
-import { VolumeSlider } from './components/VolumeSlider';
 import { ArtDialog } from './dialogs/ArtDialog';
 import { LibraryTree } from './components/LibraryTree/LibraryTree';
 import { PlayerList } from './components/PlayerList';
@@ -24,7 +21,6 @@ import { AboutDialog, TodoDialog } from './dialogs/AboutDialog';
 import { FlexColumn } from './sdk/FlexElements';
 import { AuthDialog } from './dialogs/AuthDialog';
 import { ErrorDialog } from './dialogs/ErrorDialog';
-import { NetworkGraphDialog } from './dialogs/NetworkGraphDialog';
 import { FocusModeDialog } from './dialogs/FocusModeDialog';
 import { ContactDialog } from './dialogs/ContactDialog';
 import useGlobalState from './hooks/useGlobalState';
@@ -60,7 +56,7 @@ export default function App() {
   const player = usePlayerEngine(global);
 
   return (
-    <ThemeProvider theme={state.settings.theme}>
+    <ThemeProvider theme={state.visualSettings.theme}>
       <GlobalStyles />
       {/* hidden — this is the actual audio element being driven */}
       <audio ref={player.audioRef} style={{ display: 'none' }} />
@@ -80,7 +76,6 @@ export default function App() {
         {state.windowOpen.contact && <ContactDialog global={global} />}
         <TodoDialog global={global} />
         <AuthDialog global={global} />
-        <NetworkGraphDialog global={global} />
         <ErrorDialog global={global} />
         <FocusModeDialog global={global} player={player} />
         <WindowHeader

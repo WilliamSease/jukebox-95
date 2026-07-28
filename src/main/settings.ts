@@ -1,8 +1,11 @@
 import { safeStorage, Settings } from 'electron';
 import type Store from 'electron-store' with { 'resolution-mode': 'import' };
-import { SettingsDefault, SettingsType, CachedSettingsType } from '../renderer/hooks/useGlobalState';
+import {
+  SettingsDefault,
+  VisualSettingsType,
+  CachedVisualSettingsType,
+} from '../renderer/hooks/useGlobalState';
 import * as Themes from 'react95/dist/themes';
-
 
 interface SubsonicCreds {
   url: string;
@@ -10,24 +13,24 @@ interface SubsonicCreds {
   passwordEncrypted: string;
 }
 
-interface AppSettings  {
+interface AppSettings {
   remember: boolean;
-  useSubsonic:boolean;
-  libraryPath:string,
+  useSubsonic: boolean;
+  libraryPath: string;
   subsonic: SubsonicCreds | null;
   volume: number;
-  settings:SettingsType
-  userCachedSettings:CachedSettingsType
+  settings: VisualSettingsType;
+  userCachedSettings: CachedVisualSettingsType;
 }
 
 const defaults: AppSettings = {
   remember: false,
   useSubsonic: true,
-  libraryPath: "",
+  libraryPath: '',
   subsonic: null,
-  settings:SettingsDefault,
+  settings: SettingsDefault,
   volume: 0.8,
-  userCachedSettings:[]
+  userCachedSettings: [],
 };
 
 let store: Store<AppSettings> | null = null;
@@ -42,11 +45,17 @@ async function getStore(): Promise<Store<AppSettings>> {
 
 // --- Subsonic creds (encrypted at rest) ---
 
-export async function saveSubsonicCreds(url: string, username: string, password: string) {
+export async function saveSubsonicCreds(
+  url: string,
+  username: string,
+  password: string,
+) {
   if (!safeStorage.isEncryptionAvailable()) {
     throw new Error('OS-level encryption is not available on this machine');
   }
-  const passwordEncrypted = safeStorage.encryptString(password).toString('base64');
+  const passwordEncrypted = safeStorage
+    .encryptString(password)
+    .toString('base64');
   const s = await getStore();
   s.set('subsonic', { url, username, passwordEncrypted });
   s.set('remember', true);
@@ -56,7 +65,9 @@ export async function loadSubsonicCreds() {
   const s = await getStore();
   const saved = s.get('subsonic');
   if (!saved) return null;
-  const password = safeStorage.decryptString(Buffer.from(saved.passwordEncrypted, 'base64'));
+  const password = safeStorage.decryptString(
+    Buffer.from(saved.passwordEncrypted, 'base64'),
+  );
   return { url: saved.url, username: saved.username, password };
 }
 
@@ -73,12 +84,17 @@ export async function getRemember() {
 
 // --- Generic settings ---
 
-export async function getSetting<K extends keyof AppSettings>(key: K): Promise<AppSettings[K]> {
+export async function getSetting<K extends keyof AppSettings>(
+  key: K,
+): Promise<AppSettings[K]> {
   const s = await getStore();
   return s.get(key);
 }
 
-export async function setSetting<K extends keyof AppSettings>(key: K, value: AppSettings[K]) {
+export async function setSetting<K extends keyof AppSettings>(
+  key: K,
+  value: AppSettings[K],
+) {
   const s = await getStore();
   s.set(key, value);
 }

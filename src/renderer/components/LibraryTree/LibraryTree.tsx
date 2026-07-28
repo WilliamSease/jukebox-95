@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Frame, Hourglass, ScrollView, Tab, Tabs } from 'react95';
+import {
+  Button,
+  Frame,
+  Hourglass,
+  ScrollView,
+  Tab,
+  Tabs,
+  TreeLeaf,
+} from 'react95';
 
 import './LibraryTree.css';
 import { GlobalReducer, GlobalState } from '../../hooks/useGlobalState';
@@ -31,6 +39,18 @@ export const LibraryTree = (props: { global: GlobalReducer }) => {
 
   const [selected, setSelected] = useState<Folder>();
 
+  const [shuffler, setShuffler] = useState(0);
+  const shuffledTree = useMemo(() => {
+    const shuffled = [...(tree?.items ?? [])];
+
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]; // Swap elements
+    }
+
+    return { ...tree, items: shuffled } as TreeLeaf<Folder>;
+  }, [tree, shuffler]);
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
       <TryMeDialog
@@ -51,6 +71,17 @@ export const LibraryTree = (props: { global: GlobalReducer }) => {
 
           <span style={{ flexGrow: 1 }}></span>
         </Tabs>
+        {state.behaviorSettings.randomizeTree && (
+          <Button
+            variant="thin"
+            style={{ width: '20%' }}
+            onClick={() => {
+              setShuffler((prev) => prev + 1);
+            }}
+          >
+            Shuffle
+          </Button>
+        )}
         <Button
           variant="thin"
           style={{ width: '20%' }}
@@ -102,7 +133,9 @@ export const LibraryTree = (props: { global: GlobalReducer }) => {
                 <TreeView<Folder>
                   getKey={(toGet) => toGet.path}
                   defaultExpanded={[tree.id]}
-                  tree={[tree]}
+                  tree={[
+                    state.behaviorSettings.randomizeTree ? shuffledTree : tree,
+                  ]}
                   onNodeSelect={(id, folder) => {
                     if (selected?.path === folder.path) {
                       const node = identifyNode(folder);

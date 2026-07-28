@@ -10,15 +10,17 @@ import * as Themes from 'react95/dist/themes';
 import { Theme } from 'react95/dist/types';
 import Label from '../sdk/Label';
 import { FlexWindowModal } from '../sdk/FlexWindowModal';
-import { Ref, useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  SettingsType,
   GlobalReducer,
-  CachedSettingsType,
+  CachedVisualSettingsType,
+  VisualSettingsType,
+  BehaviorSettingsType,
+  visualSettingsDefault,
+  behaviorSettingsDefault,
 } from '../hooks/useGlobalState';
 import { isEmpty, isNil } from 'lodash';
 import { exampleThemes } from '../static/settingsExamples/index';
-import { text } from 'stream/consumers';
 
 const ThemesArray = Object.entries(Themes.default);
 
@@ -29,7 +31,10 @@ type IProps = {
 export const SettingsDialog = (props: IProps) => {
   const [state, dispatch] = props.global;
 
-  const [memory, setMemory] = useState(state.settings);
+  const [memory, setMemory] = useState({
+    visualSettings: state.visualSettings,
+    behaviorSettings: state.behaviorSettings,
+  });
   const [showManage, setShowManage] = useState(false);
   const [cachedSettingsName, setCachedSettingsName] = useState('');
 
@@ -40,25 +45,30 @@ export const SettingsDialog = (props: IProps) => {
 
   useEffect(() => {
     if (state.windowOpen.settings) {
-      setMemory(state.settings);
+      setMemory({
+        visualSettings: state.visualSettings,
+        behaviorSettings: state.behaviorSettings,
+      });
     }
   }, [state.windowOpen.settings]);
 
   //Hydrate this dialog
   const hydrate = useCallback(async () => {
     try {
-      const settings = await window.settings.get<SettingsType>('settings');
+      const visualSettings =
+        await window.settings.get<VisualSettingsType>('visualSettings');
       const userCachedSettings =
-        await window.settings.get<CachedSettingsType>('userCachedSettings');
+        await window.settings.get<CachedVisualSettingsType>(
+          'userCachedSettings',
+        );
+      const behaviorSettings =
+        await window.settings.get<BehaviorSettingsType>('behaviorSettings');
 
-      console.info(settings);
-      console.info(userCachedSettings);
-      if (!isNil(settings)) {
-        dispatch({
-          settings: settings,
-          userCachedSettings: userCachedSettings ?? [],
-        });
-      }
+      dispatch({
+        visualSettings: visualSettings ?? visualSettingsDefault,
+        userCachedSettings: userCachedSettings ?? [],
+        behaviorSettings: behaviorSettings ?? behaviorSettingsDefault,
+      });
     } catch (err) {
       dispatch({ ui: { errorMessage: err as unknown as string } });
     }
@@ -69,7 +79,7 @@ export const SettingsDialog = (props: IProps) => {
 
   return (
     <FlexWindowModal
-      title="Settings"
+      title={showManage ? 'Manage visual settings' : 'Settings'}
       isOpen={state.windowOpen.settings}
       onClose={() => dispatch({ windowOpen: { settings: false } })}
       height={600}
@@ -85,7 +95,7 @@ export const SettingsDialog = (props: IProps) => {
                     const dataStr =
                       'data:text/json;charset=utf-8,' +
                       encodeURIComponent(
-                        JSON.stringify(state.settings, null, 2),
+                        JSON.stringify(state.visualSettings, null, 2),
                       );
 
                     // 2. Create a temporary anchor element
@@ -114,21 +124,27 @@ export const SettingsDialog = (props: IProps) => {
                 { text: '<- back', onPress: () => setShowManage(false) },
               ]
             : [
-                { text: 'manage...', onPress: () => setShowManage(true) },
-
                 {
                   text: 'discard',
                   onPress: () => {
                     dispatch({
-                      settings: memory,
+                      visualSettings: memory.visualSettings,
+                      behaviorSettings: memory.behaviorSettings,
                     });
                   },
                   closesWindow: true,
                 },
                 {
                   text: 'apply',
-                  onPress: () => {
-                    window.settings.set('settings', state.settings);
+                  onPress: async () => {
+                    await window.settings.set(
+                      'visualSettings',
+                      state.visualSettings,
+                    );
+                    await window.settings.set(
+                      'behaviorSettings',
+                      state.behaviorSettings,
+                    );
                   },
                   closesWindow: true,
                 },
@@ -138,8 +154,8 @@ export const SettingsDialog = (props: IProps) => {
       {showTheme ? (
         <div style={{ userSelect: 'text', margin: '.5rem' }}>
           <Label children={'Theme info:'} />
-          <ScrollView style={{ height: 400 }}>
-            {Object.entries(state.settings.theme).map((val) => (
+          <ScrollView style={{ height: 400, backgroundColor: 'white' }}>
+            {Object.entries(state.visualSettings.theme).map((val) => (
               <div>
                 {
                   <span style={{ fontWeight: 'bold', marginRight: '.25rem' }}>
@@ -147,13 +163,53 @@ export const SettingsDialog = (props: IProps) => {
                     {':'}
                   </span>
                 }
-                {`${val[1]}`}
+                {`${val[1]} `}
+                <span
+                  style={{
+                    border: 'solid black 1px',
+                    backgroundColor: val[1],
+                    color: val[1],
+                    paddingRight: '4rem',
+                    marginLeft: '.25rem',
+                  }}
+                ></span>
               </div>
             ))}
           </ScrollView>
         </div>
       ) : showManage ? (
         <div style={{ padding: '.5rem' }}>
+          <input
+            style={{ display: 'none' }}
+            type="file"
+            id="fileUpload"
+            accept="*.json"
+            ref={jsonUploadRef}
+            onInput={async (event): Promise<void> => {
+              console.info('input detected');
+              const target = event.currentTarget;
+              if (!target.files || target.files.length === 0) {
+                dispatch({ ui: { errorMessage: 'No file!' } });
+                return;
+              }
+
+              const selectedFile = target.files[0];
+
+              try {
+                let text: VisualSettingsType = await JSON.parse(
+                  await selectedFile.text(),
+                );
+                console.info(text);
+                dispatch({ visualSettings: text });
+              } catch {
+                dispatch({
+                  ui: { errorMessage: 'ambiguous catch in upload function!' },
+                });
+              } finally {
+                target.value = '';
+              }
+            }}
+          />
           <Label>System examples:</Label>
           <div>
             {Object.entries(exampleThemes).map(([key, settings]) => {
@@ -161,7 +217,7 @@ export const SettingsDialog = (props: IProps) => {
                 <Button
                   children={key}
                   onClick={() =>
-                    dispatch({ settings: settings as SettingsType })
+                    dispatch({ visualSettings: settings as VisualSettingsType })
                   }
                 />
               );
@@ -183,7 +239,7 @@ export const SettingsDialog = (props: IProps) => {
                     console.info('Writing these settings to cache...');
                     const newUserCachedSettings = state.userCachedSettings
                       .filter(([name]) => name !== cachedSettingsName)
-                      .concat([[cachedSettingsName, state.settings]]); // careful -- that's a tuple
+                      .concat([[cachedSettingsName, state.visualSettings]]); // careful -- that's a tuple
                     console.info(newUserCachedSettings);
                     dispatch({
                       userCachedSettings: newUserCachedSettings,
@@ -222,7 +278,7 @@ export const SettingsDialog = (props: IProps) => {
                 <span style={{ whiteSpace: 'nowrap' }}>
                   <Button
                     children={key}
-                    onClick={() => dispatch({ settings: settings })}
+                    onClick={() => dispatch({ visualSettings: settings })}
                   />
                   <Button
                     style={{ marginRight: '.5rem' }}
@@ -268,18 +324,20 @@ export const SettingsDialog = (props: IProps) => {
               <Label>Theme:</Label>
               <Select
                 defaultValue={ThemesArray.map((t) => t[0]).indexOf(
-                  state.settings.theme.name,
+                  state.visualSettings.theme.name,
                 )}
                 options={ThemesArray.map((v: [string, Theme], i) => {
                   return { value: i, label: v[0] };
                 })}
                 value={ThemesArray.findIndex(
-                  ([name]) => name === state.settings.theme.name,
+                  ([name]) => name === state.visualSettings.theme.name,
                 )}
                 menuMaxHeight={160}
                 width={160}
                 onChange={(e) => {
-                  dispatch({ settings: { theme: ThemesArray[e.value][1] } });
+                  dispatch({
+                    visualSettings: { theme: ThemesArray[e.value][1] },
+                  });
                 }}
               />
               <Button
@@ -293,11 +351,12 @@ export const SettingsDialog = (props: IProps) => {
                 <Label>Background:</Label>
               </div>
               <Checkbox
-                checked={state.settings.showBackgroundImage}
+                checked={state.visualSettings.showBackgroundImage}
                 onClick={() =>
                   dispatch({
-                    settings: {
-                      showBackgroundImage: !state.settings.showBackgroundImage,
+                    visualSettings: {
+                      showBackgroundImage:
+                        !state.visualSettings.showBackgroundImage,
                     },
                   })
                 }
@@ -319,10 +378,10 @@ export const SettingsDialog = (props: IProps) => {
                     label: 'cover',
                   },
                 ]}
-                value={state.settings.backgroundSizeStrategy}
+                value={state.visualSettings.backgroundSizeStrategy}
                 onChange={(option) =>
                   dispatch({
-                    settings: { backgroundSizeStrategy: option.value },
+                    visualSettings: { backgroundSizeStrategy: option.value },
                   })
                 }
               />
@@ -334,45 +393,48 @@ export const SettingsDialog = (props: IProps) => {
               <Button
                 children={'remove'}
                 onClick={() => {
-                  dispatch({ settings: { backgroundImageBase64: '' } });
+                  dispatch({ visualSettings: { backgroundImageBase64: '' } });
                 }}
               />
             </div>
             <Label>Background additional css: </Label>
             <TextInput
-              value={state.settings.backgroundCustomCSS}
+              value={state.visualSettings.backgroundCustomCSS}
               placeholder="    background-position: right; etc..."
               onChange={(event) =>
                 dispatch({
-                  settings: { backgroundCustomCSS: event.target.value },
+                  visualSettings: { backgroundCustomCSS: event.target.value },
                 })
               }
               multiline
             />
             <Label>Background all text:</Label>
             <Checkbox
-              checked={state.settings.solidTextBackground}
+              checked={state.visualSettings.solidTextBackground}
               onClick={() =>
                 dispatch({
-                  settings: {
-                    solidTextBackground: !state.settings.solidTextBackground,
+                  visualSettings: {
+                    solidTextBackground:
+                      !state.visualSettings.solidTextBackground,
                   },
                 })
               }
             />
             <Select
-              value={state.settings.solidTextBackgroundOverride}
+              value={state.visualSettings.solidTextBackgroundOverride}
               options={[{ value: '', label: '(default)' }].concat(
-                Object.entries(state.settings.theme).map(([theme, val]) => ({
-                  value: val,
-                  label: theme,
-                })),
+                Object.entries(state.visualSettings.theme).map(
+                  ([theme, val]) => ({
+                    value: val,
+                    label: theme,
+                  }),
+                ),
               )}
               menuMaxHeight={'8rem'}
               onChange={(event) => {
                 console.info(event);
                 dispatch({
-                  settings: {
+                  visualSettings: {
                     solidTextBackgroundOverride: event.value,
                   },
                 });
@@ -380,6 +442,12 @@ export const SettingsDialog = (props: IProps) => {
               width={'10rem'}
               style={{ width: '10rem' }}
             />
+            <div>
+              <Button
+                children={'Manage saved visual settings...'}
+                onClick={() => setShowManage(true)}
+              />
+            </div>
           </GroupBox>
           <input
             style={{ display: 'none' }}
@@ -402,7 +470,9 @@ export const SettingsDialog = (props: IProps) => {
                 fileReader.onload = () => {
                   if (typeof fileReader.result === 'string') {
                     dispatch({
-                      settings: { backgroundImageBase64: fileReader.result },
+                      visualSettings: {
+                        backgroundImageBase64: fileReader.result,
+                      },
                     });
                   } else {
                     dispatch({
@@ -417,37 +487,26 @@ export const SettingsDialog = (props: IProps) => {
               }
             }}
           />
-          <input
-            style={{ display: 'none' }}
-            type="file"
-            id="fileUpload"
-            accept="*.json"
-            ref={jsonUploadRef}
-            onInput={async (event): Promise<void> => {
-              console.info('input detected');
-              const target = event.currentTarget;
-              if (!target.files || target.files.length === 0) {
-                dispatch({ ui: { errorMessage: 'No file!' } });
-                return;
-              }
-
-              const selectedFile = target.files[0];
-
-              try {
-                let text: SettingsType = await JSON.parse(
-                  await selectedFile.text(),
-                );
-                console.info(text);
-                dispatch({ settings: text });
-              } catch {
-                dispatch({
-                  ui: { errorMessage: 'ambiguous catch in upload function!' },
-                });
-              } finally {
-                target.value = '';
-              }
+          <GroupBox
+            label="behavior"
+            style={{
+              marginTop: '1rem',
+              marginLeft: '1rem',
+              marginRight: '1rem',
             }}
-          />
+          >
+            <Checkbox
+              checked={state.behaviorSettings.randomizeTree}
+              label={'Randomize tree at one below root'}
+              onClick={() => {
+                dispatch({
+                  behaviorSettings: {
+                    randomizeTree: !state.behaviorSettings.randomizeTree,
+                  },
+                });
+              }}
+            />
+          </GroupBox>
         </>
       )}
     </FlexWindowModal>
