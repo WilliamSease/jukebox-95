@@ -156,7 +156,11 @@ export const AuthDialog = (props: IProps) => {
             onChange={(event) => dispatch({ libraryPath: event.target.value })}
             style={{ flexGrow: 1 }}
           />
-          <Button className="toolbarButton" onClick={handleLoadLocalFolder}>
+          <Button
+            className="toolbarButton"
+            disabled={state.useSubsonic}
+            onClick={handleLoadLocalFolder}
+          >
             Pick
           </Button>
         </Toolbar>

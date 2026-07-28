@@ -43,6 +43,14 @@ jobs:
           skip-tag: 'true'
           target-branch: 'main'
 
+      - name: Open and auto-merge bump PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create --base main --head release-bump-${{ github.run_id }} \
+            --title "ci: version bump" --body "Automated"
+          gh pr merge --auto --squash
+
       - name: Get bumped version
         id: get-version
         run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
