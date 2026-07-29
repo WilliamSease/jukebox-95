@@ -6,6 +6,7 @@ import {
   ScrollView,
   Tab,
   Tabs,
+  TextInput,
   TreeLeaf,
 } from 'react95';
 
@@ -13,7 +14,7 @@ import './LibraryTree.css';
 import { GlobalReducer, GlobalState } from '../../hooks/useGlobalState';
 import { getAllSongs } from '../../api/helperFunctions';
 import { Folder, useLibraryTree } from './useLibraryTreeResult';
-import { isNil } from 'lodash';
+import { isEmpty, isNil } from 'lodash';
 import type { Child } from 'subsonic-api' with { 'resolution-mode': 'import' };
 import { TreeView } from './__TreeView__/CustomTreeView';
 import { TryMeDialog } from '../../dialogs/TryMeDialog';
@@ -39,6 +40,13 @@ export const LibraryTree = (props: { global: GlobalReducer }) => {
 
   const [selected, setSelected] = useState<Folder>();
 
+  const [filter, setFilter] = useState('');
+  const [showFilter, setShowFilter] = useState(false);
+  const effectiveFilter = useMemo(
+    () => (showFilter ? filter : ''),
+    [showFilter, filter],
+  );
+
   const [shuffler, setShuffler] = useState(0);
   const shuffledTree = useMemo(() => {
     const shuffled = [...(tree?.items ?? [])];
@@ -50,6 +58,27 @@ export const LibraryTree = (props: { global: GlobalReducer }) => {
 
     return { ...tree, items: shuffled } as TreeLeaf<Folder>;
   }, [tree, shuffler]);
+
+  const effectiveTree = useMemo(() => {
+    const relevant = state.behaviorSettings.randomizeTree ? shuffledTree : tree;
+    if (isNil(relevant)) return null;
+    const out = {
+      ...relevant,
+      items:
+        relevant?.items?.filter(
+          (tl) =>
+            isEmpty(effectiveFilter) ||
+            tl.id.path.toLowerCase().includes(effectiveFilter.toLowerCase()),
+        ) ?? [],
+    } as TreeLeaf<Folder>;
+    console.info(out);
+    return out;
+  }, [
+    state.behaviorSettings.randomizeTree,
+    shuffledTree,
+    tree,
+    effectiveFilter,
+  ]);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
@@ -83,6 +112,15 @@ export const LibraryTree = (props: { global: GlobalReducer }) => {
           </Button>
         )}
         <Button
+          variant={showFilter ? 'flat' : 'default'}
+          style={{ width: '20%' }}
+          onClick={() => {
+            setShowFilter((prev) => !prev);
+          }}
+        >
+          Filter
+        </Button>
+        <Button
           variant="thin"
           style={{ width: '20%' }}
           onClick={() => {
@@ -104,6 +142,15 @@ export const LibraryTree = (props: { global: GlobalReducer }) => {
           Refresh
         </Button>
       </div>
+      {showFilter && (
+        <div>
+          <TextInput
+            value={filter}
+            onChange={(event) => setFilter(event.target.value)}
+            placeholder="filter (top level folders only)"
+          />
+        </div>
+      )}
       <div style={{ flexGrow: 1, display: 'flex' }}>
         <Frame variant="field" style={{ display: 'flex', flexGrow: 1 }}>
           <ScrollView
@@ -129,13 +176,11 @@ export const LibraryTree = (props: { global: GlobalReducer }) => {
                 <div>{`${progress} songs...`}</div>
               </div>
             ) : (
-              !isNil(tree) && (
+              !isNil(effectiveTree) && (
                 <TreeView<Folder>
                   getKey={(toGet) => toGet.path}
-                  defaultExpanded={[tree.id]}
-                  tree={[
-                    state.behaviorSettings.randomizeTree ? shuffledTree : tree,
-                  ]}
+                  defaultExpanded={[effectiveTree.id]}
+                  tree={[effectiveTree]}
                   onNodeSelect={(id, folder) => {
                     if (selected?.path === folder.path) {
                       const node = identifyNode(folder);
@@ -149,8 +194,6 @@ export const LibraryTree = (props: { global: GlobalReducer }) => {
                       setSelected(folder);
                     }
                   }}
-
-                  onNodeToggle={(event) => {}}
                 />
               )
             )}
