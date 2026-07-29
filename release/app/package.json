@@ -1,7 +1,8 @@
 {
   "name": "jukebox-95",
   "version": "1.1.0",
-  "next-version-type": "patch",
+  "next-version-type": null,
+  "^^^ use-null-for-patch": null,
   "description": "",
   "author": {
     "name": "William Sease",
