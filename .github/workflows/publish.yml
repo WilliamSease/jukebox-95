@@ -22,6 +22,10 @@ jobs:
       
       - name: Create release bump branch
         run: git checkout -b release-bump-${{ github.run_id }}
+      
+      - name: Get next version type
+        id: get-version-type
+        run: echo "next-version-type=$(node -p "require('./package.json').next-version-type")" >> "$GITHUB_OUTPUT"
 
       - name: Automated Version Bump (main/root)
         uses: 'phips28/gh-action-bump-version@master'
@@ -29,7 +33,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_WORKSPACE: 'williamsease/jukebox-95/'
         with:
-          version-type: 'patch'
+          version-type: ${{ steps.get-version-type.outputs.next-version-type }}
           target-branch: 'main'
           skip-tag: 'true'
 
@@ -39,7 +43,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_WORKSPACE: 'williamsease/jukebox-95/'
         with:
-          version-type: 'patch'
+          version-type: ${{ steps.get-version-type.outputs.next-version-type }}
           PACKAGEJSON_DIR: 'release/app'
           tag-prefix: 'v'
           target-branch: 'main'
