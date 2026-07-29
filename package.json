@@ -1,6 +1,6 @@
 {
   "name": "jukebox-95",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A subsonic-compatible music client written in stylish React 95.",
   "keywords": [
     "electron",
