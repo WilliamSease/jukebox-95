@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Button,
   Frame,
@@ -80,6 +80,33 @@ export const LibraryTree = (props: { global: GlobalReducer }) => {
     effectiveFilter,
   ]);
 
+  const treeButton = useCallback(
+    () => (
+      <Button
+        variant="thin"
+        style={{ width: '20%' }}
+        onClick={() => {
+          setLoading(true);
+          if (state.useSubsonic)
+            getAllSongs(setProgress)
+              .then(initialize)
+              .catch((err) => dispatch({ ui: { errorMessage: err } }))
+              .finally(() => setLoading(false));
+          else {
+            window.localLibrary
+              .scan(state.libraryPath)
+              .then(initialize)
+              .catch((err) => dispatch({ ui: { errorMessage: err } }))
+              .finally(() => setLoading(false));
+          }
+        }}
+      >
+        Refresh
+      </Button>
+    ),
+    [state.useSubsonic],
+  );
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flexGrow: 1 }}>
       <TryMeDialog
@@ -120,27 +147,7 @@ export const LibraryTree = (props: { global: GlobalReducer }) => {
         >
           Filter
         </Button>
-        <Button
-          variant="thin"
-          style={{ width: '20%' }}
-          onClick={() => {
-            setLoading(true);
-            if (state.useSubsonic)
-              getAllSongs(setProgress)
-                .then(initialize)
-                .catch((err) => dispatch({ ui: { errorMessage: err } }))
-                .finally(() => setLoading(false));
-            else {
-              window.localLibrary
-                .scan(state.libraryPath)
-                .then(initialize)
-                .catch((err) => dispatch({ ui: { errorMessage: err } }))
-                .finally(() => setLoading(false));
-            }
-          }}
-        >
-          Refresh
-        </Button>
+        {!isNil(effectiveTree) && treeButton()}
       </div>
       {showFilter && (
         <div>
@@ -161,8 +168,11 @@ export const LibraryTree = (props: { global: GlobalReducer }) => {
               display: 'flex',
             }}
           >
-            {isNil(tree) && !loading ? (
-              <div>Rebuild Tree!</div>
+            {isNil(effectiveTree) && !loading ? (
+              <>
+                <div>Rebuild Tree!</div>
+                <div> {isNil(effectiveTree) && treeButton()}</div>
+              </>
             ) : loading ? (
               <div
                 style={{

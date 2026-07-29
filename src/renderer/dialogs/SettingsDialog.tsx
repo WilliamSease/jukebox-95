@@ -19,7 +19,7 @@ import {
   visualSettingsDefault,
   behaviorSettingsDefault,
 } from '../hooks/useGlobalState';
-import { isEmpty, isNil } from 'lodash';
+import { isEmpty } from 'lodash';
 import { exampleThemes } from '../static/settingsExamples/index';
 
 const ThemesArray = Object.entries(Themes.default);
@@ -37,6 +37,7 @@ export const SettingsDialog = (props: IProps) => {
   });
   const [showManage, setShowManage] = useState(false);
   const [cachedSettingsName, setCachedSettingsName] = useState('');
+  const [confirmWipeCache, setConfirmWipeCache] = useState(false);
 
   const imgUploadRef = useRef<HTMLInputElement | null>(null);
   const jsonUploadRef = useRef<HTMLInputElement | null>(null);
@@ -259,17 +260,24 @@ export const SettingsDialog = (props: IProps) => {
             <Button
               style={{ marginLeft: '.5rem' }}
               onClick={() => {
-                try {
-                  dispatch({
-                    userCachedSettings: [],
-                  });
-                  window.settings.set('userCachedSettings', []);
-                } catch (err) {
-                  dispatch({ ui: { errorMessage: err as unknown as string } });
+                if (confirmWipeCache) {
+                  try {
+                    dispatch({
+                      userCachedSettings: [],
+                    });
+                    window.settings.set('userCachedSettings', []);
+                  } catch (err) {
+                    dispatch({
+                      ui: { errorMessage: err as unknown as string },
+                    });
+                  }
+                  setConfirmWipeCache(false);
+                } else {
+                  setConfirmWipeCache(true);
                 }
               }}
             >
-              Wipe Cache(!)...
+              {confirmWipeCache ? 'Are you sure?' : 'Wipe Cache(!!!)...'}
             </Button>
           </div>
           <div style={{ marginTop: '.5rem' }}>
